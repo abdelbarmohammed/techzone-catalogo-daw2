@@ -14,27 +14,21 @@ interface StrapiResponse<T> {
   };
 }
 
-interface StrapiItem {
-  id: number;
-  attributes: Record<string, unknown>;
-}
-
 // Función genérica para obtener datos de Strapi
 export async function obtenerDeStrapi<T>(
-  endpoint: string, 
+  endpoint: string,
   params: string = ''
 ): Promise<StrapiResponse<T>> {
   const url = `${STRAPI_URL}/api/${endpoint}${params ? `?${params}` : ''}`;
-  
+
   try {
     const respuesta = await fetch(url);
-    
+
     if (!respuesta.ok) {
       throw new Error(`Error HTTP: ${respuesta.status}`);
     }
-    
-    const datos = await respuesta.json();
-    return datos;
+
+    const datos = await respuesta.json() as StrapiResponse<T>; return datos;
   } catch (error) {
     console.error(`Error obteniendo ${endpoint}:`, error);
     throw error;
