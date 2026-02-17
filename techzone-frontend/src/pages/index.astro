@@ -30,6 +30,8 @@ interface TextosGenerale {
   flechaDerecha: string;
   errorCargarContenido: string;
   noProductosDestacados: string;
+  anadirAlCarrito: string;
+  productoAnadido: string;
 }
 
 interface Categoria {
@@ -148,37 +150,48 @@ try {
         ) : (
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {productosDestacados.map((producto) => (
-              <a href={`/productos/${producto.slug}`} class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
-                <div class="aspect-square bg-fondo p-4 relative">
-                  {producto.imagen?.url && (
-                    <img 
-                      src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
-                      alt={producto.nombre}
-                      class="w-full h-full object-contain"
-                    />
-                  )}
-                  <button 
-                    class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
-                    aria-label={textos.anadirFavoritos}
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-                </div>
-                <div class="p-4">
-                  <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
-                  <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
-                  <div class="flex items-center justify-between mt-3">
-                    <span class="text-lg font-bold text-acento">{textos.simboloMoneda}{producto.precio.toLocaleString()}</span>
-                    <button class="p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition">
+              <div class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+                <a href={`/productos/${producto.slug}`} class="block">
+                  <div class="aspect-square bg-fondo p-4 relative">
+                    {producto.imagen?.url && (
+                      <img 
+                        src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+                        alt={producto.nombre}
+                        class="w-full h-full object-contain"
+                      />
+                    )}
+                    <button 
+                      class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
+                      aria-label={textos.anadirFavoritos}
+                      onclick="event.preventDefault(); event.stopPropagation();"
+                    >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                       </svg>
                     </button>
                   </div>
+                  <div class="p-4">
+                    <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
+                    <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
+                  </div>
+                </a>
+                <div class="px-4 pb-4 flex items-center justify-between">
+                  <span class="text-lg font-bold text-acento">{textos.simboloMoneda}{producto.precio.toLocaleString()}</span>
+                  <button 
+                    class="boton-carrito p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition"
+                    data-id={producto.id}
+                    data-nombre={producto.nombre}
+                    data-precio={producto.precio}
+                    data-imagen={producto.imagen?.url ? `${STRAPI_URL_BASE}${producto.imagen.url}` : ''}
+                    data-slug={producto.slug}
+                    aria-label={textos.anadirAlCarrito || 'Añadir al carrito'}
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </button>
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         )}
@@ -204,4 +217,31 @@ try {
     </>
   )}
 
+  <!-- Script para añadir al carrito -->
+  <script>
+    import { anadirAlCarrito } from '../lib/carrito.js';
+
+    document.querySelectorAll('.boton-carrito').forEach(boton => {
+      boton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const btn = e.currentTarget as HTMLElement;
+        const producto = {
+          id: parseInt(btn.dataset.id || '0'),
+          nombre: btn.dataset.nombre || '',
+          precio: parseFloat(btn.dataset.precio || '0'),
+          imagen: btn.dataset.imagen || '',
+          slug: btn.dataset.slug || ''
+        };
+        
+        anadirAlCarrito(producto);
+        
+        // Mostrar toast
+        if ((window as any).mostrarToast) {
+          (window as any).mostrarToast('Producto añadido al carrito');
+        }
+      });
+    });
+  </script>
 </Layout>

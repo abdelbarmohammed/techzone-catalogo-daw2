@@ -23,6 +23,8 @@ interface TextosGenerale {
   verMas: string;
   anadirFavoritos: string;
   simboloMoneda: string;
+  anadirAlCarrito: string;
+  productoAnadido: string;
 }
 
 interface Categoria {
@@ -96,7 +98,7 @@ const totalProductos = productos.length;
       </section>
 
       <!-- Filtros y Ordenación -->
-        <section class="flex flex-col gap-4 mb-8">
+      <section class="flex flex-col gap-4 mb-8">
         <!-- Filtro Categorías -->
         <div class="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           <button class="filtro-categoria px-4 py-2 rounded-xl text-sm border border-acento bg-acento/10 text-acento transition"
@@ -114,12 +116,12 @@ const totalProductos = productos.length;
         </div>
 
         <!-- Ordenar -->
-            <div class="relative flex items-center gap-2">
-            <span class="text-gris text-sm whitespace-nowrap">{textos.ordenarPor}:</span>
-            <select
-             id="ordenar"
-                 class="bg-panel border border-borde rounded-xl px-3 py-2 text-sm text-blanco focus:outline-none focus:border-acento appearance-none cursor-pointer min-w-[160px]"
-                 >
+        <div class="relative flex items-center gap-2">
+          <span class="text-gris text-sm whitespace-nowrap">{textos.ordenarPor}:</span>
+          <select
+            id="ordenar"
+            class="bg-panel border border-borde rounded-xl px-3 py-2 text-sm text-blanco focus:outline-none focus:border-acento appearance-none cursor-pointer min-w-[160px]"
+          >
             <option value="recientes">{textos.ordenarRecientes}</option>
             <option value="precio-asc">{textos.ordenarPrecioMenor}</option>
             <option value="precio-desc">{textos.ordenarPrecioMayor}</option>
@@ -138,42 +140,56 @@ const totalProductos = productos.length;
       <!-- Grid Productos -->
       <section id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         {productos.map((producto) => (
-          <a
-            href={"/productos/" + producto.slug}
+          <div
             class="producto-card group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition"
             data-nombre={producto.nombre.toLowerCase()}
             data-precio={producto.precio}
             data-categoria={producto.categoria?.slug || ''}
             data-fecha={producto.createdAt}
           >
-            <div class="aspect-square bg-fondo p-4 relative">
-              {producto.imagen?.url && (
-                <img
-                  src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
-                  alt={producto.nombre}
-                  class="w-full h-full object-contain"
-                  loading="lazy"
-                />
-              )}
-              <button
-                class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
-                aria-label={textos.anadirFavoritos}
-                onclick="event.preventDefault();"
+            <a href={"/productos/" + producto.slug} class="block">
+              <div class="aspect-square bg-fondo p-4 relative">
+                {producto.imagen?.url && (
+                  <img
+                    src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+                    alt={producto.nombre}
+                    class="w-full h-full object-contain"
+                    loading="lazy"
+                  />
+                )}
+                <button
+                  class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
+                  aria-label={textos.anadirFavoritos}
+                  onclick="event.preventDefault(); event.stopPropagation();"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
+              </div>
+              <div class="p-4">
+                <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
+                <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
+                <p class="text-gris text-sm mt-1 line-clamp-2">{producto.descripcionCorta}</p>
+              </div>
+            </a>
+            <div class="px-4 pb-4 flex items-center justify-between">
+              <span class="text-lg font-bold text-acento">{textos.simboloMoneda}{producto.precio.toLocaleString()}</span>
+              <button 
+                class="boton-carrito p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition"
+                data-id={producto.id}
+                data-nombre={producto.nombre}
+                data-precio={producto.precio}
+                data-imagen={producto.imagen?.url ? `${STRAPI_URL_BASE}${producto.imagen.url}` : ''}
+                data-slug={producto.slug}
+                aria-label={textos.anadirAlCarrito || 'Añadir al carrito'}
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </button>
             </div>
-            <div class="p-4">
-              <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
-              <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
-              <p class="text-gris text-sm mt-1 line-clamp-2">{producto.descripcionCorta}</p>
-              <div class="flex items-center justify-between mt-3">
-                <span class="text-lg font-bold text-acento">{textos.simboloMoneda}{producto.precio.toLocaleString()}</span>
-              </div>
-            </div>
-          </a>
+          </div>
         ))}
       </section>
 
@@ -182,8 +198,10 @@ const totalProductos = productos.length;
         <p class="text-gris">{textos.noResultados}</p>
       </div>
 
-      <!-- JavaScript para búsqueda, filtros y ordenación -->
+      <!-- JavaScript para búsqueda, filtros, ordenación y carrito -->
       <script>
+        import { anadirAlCarrito } from '../../lib/carrito.js';
+
         // Elementos del DOM
         const buscador = document.getElementById('buscador') as HTMLInputElement;
         const selectOrdenar = document.getElementById('ordenar') as HTMLSelectElement;
@@ -267,10 +285,11 @@ const totalProductos = productos.length;
           }
         }
 
-        // Event listeners
+        // Event listeners para búsqueda y ordenación
         buscador.addEventListener('input', filtrarYOrdenar);
         selectOrdenar.addEventListener('change', filtrarYOrdenar);
 
+        // Event listeners para filtros de categoría
         filtrosCategorias.forEach((boton) => {
           boton.addEventListener('click', () => {
             // Actualizar estilos
@@ -284,6 +303,30 @@ const totalProductos = productos.length;
             // Actualizar filtro
             categoriaActual = (boton as HTMLElement).dataset.categoria || 'todas';
             filtrarYOrdenar();
+          });
+        });
+
+        // Event listeners para botones de carrito
+        document.querySelectorAll('.boton-carrito').forEach(boton => {
+          boton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const btn = e.currentTarget as HTMLElement;
+            const producto = {
+              id: parseInt(btn.dataset.id || '0'),
+              nombre: btn.dataset.nombre || '',
+              precio: parseFloat(btn.dataset.precio || '0'),
+              imagen: btn.dataset.imagen || '',
+              slug: btn.dataset.slug || ''
+            };
+            
+            anadirAlCarrito(producto);
+            
+            // Mostrar toast
+            if ((window as any).mostrarToast) {
+              (window as any).mostrarToast('Producto añadido al carrito');
+            }
           });
         });
       </script>
