@@ -1,0 +1,66 @@
+{
+  "kind": "singleType",
+  "collectionName": "pagina_inicios",
+  "info": {
+    "singularName": "pagina-inicio",
+    "pluralName": "pagina-inicios",
+    "displayName": "PaginaInicio"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "heroTitulo": {
+      "type": "string",
+      "required": true
+    },
+    "heroSubtitulo": {
+      "type": "text",
+      "required": true
+    },
+    "heroBadge": {
+      "type": "string",
+      "required": true
+    },
+    "heroBotonPrimario": {
+      "type": "string",
+      "required": true
+    },
+    "heroBotonSecundario": {
+      "type": "string",
+      "required": true
+    },
+    "categoriasSeccionTitulo": {
+      "type": "string",
+      "required": true
+    },
+    "categoriasSeccionSubtitulo": {
+      "type": "string"
+    },
+    "productosSeccionTitulo": {
+      "type": "string",
+      "required": true
+    },
+    "newsletterTitulo": {
+      "type": "string",
+      "required": true
+    },
+    "newsletterSubtitulo": {
+      "type": "text"
+    },
+    "newsletterBoton": {
+      "type": "string",
+      "required": true
+    },
+    "newsletterPlaceholder": {
+      "type": "string"
+    },
+    "metaTitulo": {
+      "type": "string"
+    },
+    "metaDescripcion": {
+      "type": "text"
+    }
+  }
+}

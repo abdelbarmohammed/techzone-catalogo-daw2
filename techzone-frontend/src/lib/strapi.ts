@@ -28,9 +28,13 @@ export async function obtenerDeStrapi<T>(
       throw new Error(`Error HTTP: ${respuesta.status}`);
     }
 
-    const datos = await respuesta.json() as StrapiResponse<T>; return datos;
+    const datos = await respuesta.json() as StrapiResponse<T>;
+    return datos;
   } catch (error) {
     console.error(`Error obteniendo ${endpoint}:`, error);
     throw error;
   }
 }
+
+// Exportar URL base para imágenes
+export const STRAPI_URL_BASE = STRAPI_URL;

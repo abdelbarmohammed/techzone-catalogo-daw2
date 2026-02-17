@@ -1,0 +1,292 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { obtenerDeStrapi, STRAPI_URL_BASE } from "../../lib/strapi";
+
+// Tipos
+interface PaginaProducto {
+  metaTitulo: string;
+  metaDescripcion: string;
+  titulo: string;
+  subtitulo: string;
+}
+
+interface TextosGenerale {
+  buscarPlaceholder: string;
+  ordenarPor: string;
+  ordenarPrecioMenor: string;
+  ordenarPrecioMayor: string;
+  ordenarNombreAZ: string;
+  ordenarRecientes: string;
+  todasCategorias: string;
+  mostrandoResultados: string;
+  noResultados: string;
+  verMas: string;
+  anadirFavoritos: string;
+  simboloMoneda: string;
+}
+
+interface Categoria {
+  id: number;
+  nombre: string;
+  slug: string;
+}
+
+interface Producto {
+  id: number;
+  nombre: string;
+  slug: string;
+  descripcionCorta: string;
+  precio: number;
+  marca: string;
+  imagen: { url: string };
+  categoria: Categoria;
+  createdAt: string;
+}
+
+// Obtener datos
+let pagina: PaginaProducto | null = null;
+let textos: TextosGenerale | null = null;
+let categorias: Categoria[] = [];
+let productos: Producto[] = [];
+let error = false;
+
+try {
+  const resPagina = await obtenerDeStrapi<PaginaProducto>('pagina-producto');
+  pagina = resPagina.data;
+
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+
+  const resCategorias = await obtenerDeStrapi<Categoria[]>('categorias');
+  categorias = resCategorias.data;
+
+  const resProductos = await obtenerDeStrapi<Producto[]>('productos', 'populate=*');
+  productos = resProductos.data;
+} catch (e) {
+  console.error('Error:', e);
+  error = true;
+}
+
+const totalProductos = productos.length;
+---
+
+<Layout titulo={pagina?.metaTitulo} descripcion={pagina?.metaDescripcion}>
+  {error || !pagina || !textos ? (
+    <div class="text-center py-20 text-error">
+      <p>{textos?.noResultados || 'Error al cargar.'}</p>
+    </div>
+  ) : (
+    <>
+      <!-- Cabecera -->
+      <section class="py-8 text-center">
+        <h1 class="text-4xl font-bold mb-2">{pagina.titulo}</h1>
+        <p class="text-gris">{pagina.subtitulo}</p>
+      </section>
+
+      <!-- Buscador -->
+      <section class="mb-8">
+        <div class="max-w-2xl mx-auto">
+          <input
+            type="text"
+            id="buscador"
+            placeholder={textos.buscarPlaceholder}
+            class="w-full px-4 py-3 bg-panel border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
+          />
+        </div>
+      </section>
+
+      <!-- Filtros y Ordenación -->
+        <section class="flex flex-col gap-4 mb-8">
+        <!-- Filtro Categorías -->
+        <div class="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <button class="filtro-categoria px-4 py-2 rounded-xl text-sm border border-acento bg-acento/10 text-acento transition"
+            data-categoria="todas">
+            {textos.todasCategorias}
+          </button>
+          {categorias.map((cat) => (
+            <button
+              class="filtro-categoria px-4 py-2 rounded-xl text-sm border border-borde text-gris hover:border-acento hover:text-acento transition"
+              data-categoria={cat.slug}
+            >
+              {cat.nombre}
+            </button>
+          ))}
+        </div>
+
+        <!-- Ordenar -->
+            <div class="relative flex items-center gap-2">
+            <span class="text-gris text-sm whitespace-nowrap">{textos.ordenarPor}:</span>
+            <select
+             id="ordenar"
+                 class="bg-panel border border-borde rounded-xl px-3 py-2 text-sm text-blanco focus:outline-none focus:border-acento appearance-none cursor-pointer min-w-[160px]"
+                 >
+            <option value="recientes">{textos.ordenarRecientes}</option>
+            <option value="precio-asc">{textos.ordenarPrecioMenor}</option>
+            <option value="precio-desc">{textos.ordenarPrecioMayor}</option>
+            <option value="nombre-asc">{textos.ordenarNombreAZ}</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Contador Resultados -->
+      <div class="mb-6">
+        <p class="text-gris text-sm">
+          <span id="contador-resultados">{totalProductos}</span> {textos.mostrandoResultados.replace('{count}', '').replace('{total}', '').replace('de', '').trim() || 'productos encontrados'}
+        </p>
+      </div>
+
+      <!-- Grid Productos -->
+      <section id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {productos.map((producto) => (
+          <a
+            href={"/productos/" + producto.slug}
+            class="producto-card group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition"
+            data-nombre={producto.nombre.toLowerCase()}
+            data-precio={producto.precio}
+            data-categoria={producto.categoria?.slug || ''}
+            data-fecha={producto.createdAt}
+          >
+            <div class="aspect-square bg-fondo p-4 relative">
+              {producto.imagen?.url && (
+                <img
+                  src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+                  alt={producto.nombre}
+                  class="w-full h-full object-contain"
+                  loading="lazy"
+                />
+              )}
+              <button
+                class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
+                aria-label={textos.anadirFavoritos}
+                onclick="event.preventDefault();"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </button>
+            </div>
+            <div class="p-4">
+              <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
+              <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
+              <p class="text-gris text-sm mt-1 line-clamp-2">{producto.descripcionCorta}</p>
+              <div class="flex items-center justify-between mt-3">
+                <span class="text-lg font-bold text-acento">{textos.simboloMoneda}{producto.precio.toLocaleString()}</span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </section>
+
+      <!-- Mensaje Sin Resultados -->
+      <div id="sin-resultados" class="hidden text-center py-12">
+        <p class="text-gris">{textos.noResultados}</p>
+      </div>
+
+      <!-- JavaScript para búsqueda, filtros y ordenación -->
+      <script>
+        // Elementos del DOM
+        const buscador = document.getElementById('buscador') as HTMLInputElement;
+        const selectOrdenar = document.getElementById('ordenar') as HTMLSelectElement;
+        const gridProductos = document.getElementById('grid-productos') as HTMLElement;
+        const contadorResultados = document.getElementById('contador-resultados') as HTMLElement;
+        const sinResultados = document.getElementById('sin-resultados') as HTMLElement;
+        const filtrosCategorias = document.querySelectorAll('.filtro-categoria');
+
+        let categoriaActual = 'todas';
+
+        // Función para normalizar texto (quitar acentos)
+        function normalizarTexto(texto: string): string {
+          return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        // Función para filtrar y ordenar productos
+        function filtrarYOrdenar(): void {
+          const termino = normalizarTexto(buscador.value);
+          const orden = selectOrdenar.value;
+          const tarjetas = Array.from(gridProductos.querySelectorAll('.producto-card')) as HTMLElement[];
+
+          // Crear regex para búsqueda
+          let regex: RegExp;
+          try {
+            regex = new RegExp(termino, 'i');
+          } catch (e) {
+            regex = new RegExp(termino.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+          }
+
+          // Filtrar
+          let visibles = 0;
+          tarjetas.forEach((tarjeta) => {
+            const nombre = tarjeta.dataset.nombre || '';
+            const categoria = tarjeta.dataset.categoria || '';
+
+            const coincideBusqueda = regex.test(normalizarTexto(nombre));
+            const coincideCategoria = categoriaActual === 'todas' || categoria === categoriaActual;
+
+            if (coincideBusqueda && coincideCategoria) {
+              tarjeta.classList.remove('hidden');
+              visibles++;
+            } else {
+              tarjeta.classList.add('hidden');
+            }
+          });
+
+          // Ordenar
+          const tarjetasVisibles = tarjetas.filter((t) => !t.classList.contains('hidden'));
+          tarjetasVisibles.sort((a, b) => {
+            const precioA = parseFloat(a.dataset.precio || '0');
+            const precioB = parseFloat(b.dataset.precio || '0');
+            const nombreA = a.dataset.nombre || '';
+            const nombreB = b.dataset.nombre || '';
+            const fechaA = new Date(a.dataset.fecha || '').getTime();
+            const fechaB = new Date(b.dataset.fecha || '').getTime();
+
+            switch (orden) {
+              case 'precio-asc':
+                return precioA - precioB;
+              case 'precio-desc':
+                return precioB - precioA;
+              case 'nombre-asc':
+                return nombreA.localeCompare(nombreB);
+              case 'recientes':
+              default:
+                return fechaB - fechaA;
+            }
+          });
+
+          // Reordenar en el DOM
+          tarjetasVisibles.forEach((tarjeta) => gridProductos.appendChild(tarjeta));
+
+          // Actualizar contador
+          contadorResultados.textContent = visibles.toString();
+
+          // Mostrar/ocultar mensaje sin resultados
+          if (visibles === 0) {
+            sinResultados.classList.remove('hidden');
+          } else {
+            sinResultados.classList.add('hidden');
+          }
+        }
+
+        // Event listeners
+        buscador.addEventListener('input', filtrarYOrdenar);
+        selectOrdenar.addEventListener('change', filtrarYOrdenar);
+
+        filtrosCategorias.forEach((boton) => {
+          boton.addEventListener('click', () => {
+            // Actualizar estilos
+            filtrosCategorias.forEach((b) => {
+              b.classList.remove('border-acento', 'bg-acento/10', 'text-acento');
+              b.classList.add('border-borde', 'text-gris');
+            });
+            boton.classList.remove('border-borde', 'text-gris');
+            boton.classList.add('border-acento', 'bg-acento/10', 'text-acento');
+
+            // Actualizar filtro
+            categoriaActual = (boton as HTMLElement).dataset.categoria || 'todas';
+            filtrarYOrdenar();
+          });
+        });
+      </script>
+    </>
+  )}
+</Layout>

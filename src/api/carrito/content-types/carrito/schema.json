@@ -1,0 +1,48 @@
+{
+  "kind": "singleType",
+  "collectionName": "carritos",
+  "info": {
+    "singularName": "carrito",
+    "pluralName": "carritos",
+    "displayName": "carrito"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "metaTitulo": {
+      "type": "string"
+    },
+    "metaDescripcion": {
+      "type": "text"
+    },
+    "titulo": {
+      "type": "string"
+    },
+    "vacio": {
+      "type": "string"
+    },
+    "total": {
+      "type": "string"
+    },
+    "subtotal": {
+      "type": "string"
+    },
+    "eliminar": {
+      "type": "string"
+    },
+    "anadir": {
+      "type": "string"
+    },
+    "cantidad": {
+      "type": "string"
+    },
+    "irPagar": {
+      "type": "string"
+    },
+    "seguirComprando": {
+      "type": "string"
+    }
+  }
+}

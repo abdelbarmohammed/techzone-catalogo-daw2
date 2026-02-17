@@ -1,0 +1,105 @@
+---
+const enlacesNavegacion = [
+	{ etiqueta: "Home", href: "/" },
+	{ etiqueta: "Products", href: "/productos" },
+	{ etiqueta: "Blog", href: "/blog" },
+];
+---
+
+<header class="sticky top-0 z-40 border-b border-borde/60 bg-fondo/80 backdrop-blur">
+	<div class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+		<div class="flex h-16 items-center justify-between gap-3">
+			<a href="/" class="flex items-center gap-2">
+				<span
+					class="grid h-8 w-8 place-items-center rounded-xl bg-acento/15 ring-1 ring-acento/30"
+					aria-hidden="true"
+				>
+					<span class="h-3 w-3 rounded-full bg-acento"></span>
+				</span>
+				<span class="text-base font-semibold tracking-tight">GaleríaTech</span>
+			</a>
+
+			<nav class="hidden md:flex items-center gap-6 text-sm text-gris">
+				{
+					enlacesNavegacion.map((enlace) => (
+						<a
+							href={enlace.href}
+							class="transition-colors hover:text-blanco focus:outline-none focus-visible:ring-2 focus-visible:ring-acento/70 rounded-md"
+						>
+							{enlace.etiqueta}
+						</a>
+					))
+				}
+			</nav>
+
+			<div class="hidden md:flex items-center gap-2">
+				<a
+					href="/login"
+					class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-blanco/90 ring-1 ring-borde transition hover:bg-panel hover:text-blanco"
+				>
+					Login
+				</a>
+				<a
+					href="/productos"
+					class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-fondo bg-acento transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-acento/70"
+				>
+					Get Started
+				</a>
+			</div>
+
+			<button
+				type="button"
+				class="md:hidden inline-flex items-center justify-center rounded-xl p-2 ring-1 ring-borde hover:bg-panel"
+				aria-label="Abrir menú"
+				data-boton-menu
+			>
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+				</svg>
+			</button>
+		</div>
+
+		<!-- Menú móvil -->
+		<div class="md:hidden hidden pb-4" data-menu-movil>
+			<nav class="flex flex-col gap-2 pt-2 text-sm">
+				{
+					enlacesNavegacion.map((enlace) => (
+						<a
+							href={enlace.href}
+							class="rounded-xl px-3 py-2 text-gris hover:text-blanco hover:bg-panel transition"
+						>
+							{enlace.etiqueta}
+						</a>
+					))
+				}
+			</nav>
+
+			<div class="mt-3 grid grid-cols-2 gap-2">
+				<a
+					href="/login"
+					class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-blanco/90 ring-1 ring-borde transition hover:bg-panel hover:text-blanco"
+				>
+					Login
+				</a>
+				<a
+					href="/productos"
+					class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-fondo bg-acento transition hover:opacity-90"
+				>
+					Get Started
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Menú móvil sin dependencias
+		const boton = document.querySelector("[data-boton-menu]");
+		const menu = document.querySelector("[data-menu-movil]");
+
+		if (boton && menu) {
+			boton.addEventListener("click", () => {
+				menu.classList.toggle("hidden");
+			});
+		}
+	</script>
+</header>

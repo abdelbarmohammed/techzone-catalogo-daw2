@@ -465,6 +465,44 @@ export interface ApiArticuloArticulo extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiCarritoCarrito extends Struct.SingleTypeSchema {
+  collectionName: 'carritos';
+  info: {
+    displayName: 'carrito';
+    pluralName: 'carritos';
+    singularName: 'carrito';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    anadir: Schema.Attribute.String;
+    cantidad: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    eliminar: Schema.Attribute.String;
+    irPagar: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::carrito.carrito'
+    > &
+      Schema.Attribute.Private;
+    metaDescripcion: Schema.Attribute.Text;
+    metaTitulo: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    seguirComprando: Schema.Attribute.String;
+    subtotal: Schema.Attribute.String;
+    titulo: Schema.Attribute.String;
+    total: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    vacio: Schema.Attribute.String;
+  };
+}
+
 export interface ApiCategoriaCategoria extends Struct.CollectionTypeSchema {
   collectionName: 'categorias';
   info: {
@@ -494,6 +532,158 @@ export interface ApiCategoriaCategoria extends Struct.CollectionTypeSchema {
     productos: Schema.Attribute.Relation<'oneToMany', 'api::producto.producto'>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'nombre'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiConfiguracionSitioConfiguracionSitio
+  extends Struct.SingleTypeSchema {
+  collectionName: 'configuracion_sitios';
+  info: {
+    displayName: 'ConfiguracionSitio';
+    pluralName: 'configuracion-sitios';
+    singularName: 'configuracion-sitio';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    copyright: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    descripcionSitio: Schema.Attribute.Text & Schema.Attribute.Required;
+    emailContacto: Schema.Attribute.String & Schema.Attribute.Required;
+    etiquetaTema: Schema.Attribute.String;
+    facebook: Schema.Attribute.String;
+    favicon: Schema.Attribute.Media<'images' | 'files'>;
+    instagram: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::configuracion-sitio.configuracion-sitio'
+    > &
+      Schema.Attribute.Private;
+    logo: Schema.Attribute.Media<'images' | 'files'> &
+      Schema.Attribute.Required;
+    nombreSitio: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    twitter: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    urlSitio: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface ApiNavegacionNavegacion extends Struct.SingleTypeSchema {
+  collectionName: 'navegacions';
+  info: {
+    displayName: 'Navegacion';
+    pluralName: 'navegacions';
+    singularName: 'navegacion';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    blog: Schema.Attribute.String;
+    carrito: Schema.Attribute.String;
+    catalogo: Schema.Attribute.String;
+    contacto: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    explorar: Schema.Attribute.String;
+    inicio: Schema.Attribute.String & Schema.Attribute.Required;
+    legal: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::navegacion.navegacion'
+    > &
+      Schema.Attribute.Private;
+    privacidad: Schema.Attribute.String;
+    productos: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    social: Schema.Attribute.String & Schema.Attribute.DefaultTo<'social'>;
+    terminos: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPaginaInicioPaginaInicio extends Struct.SingleTypeSchema {
+  collectionName: 'pagina_inicios';
+  info: {
+    displayName: 'PaginaInicio';
+    pluralName: 'pagina-inicios';
+    singularName: 'pagina-inicio';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    categoriasSeccionSubtitulo: Schema.Attribute.String;
+    categoriasSeccionTitulo: Schema.Attribute.String &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    heroBadge: Schema.Attribute.String & Schema.Attribute.Required;
+    heroBotonPrimario: Schema.Attribute.String & Schema.Attribute.Required;
+    heroBotonSecundario: Schema.Attribute.String & Schema.Attribute.Required;
+    heroSubtitulo: Schema.Attribute.Text & Schema.Attribute.Required;
+    heroTitulo: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pagina-inicio.pagina-inicio'
+    > &
+      Schema.Attribute.Private;
+    metaDescripcion: Schema.Attribute.Text;
+    metaTitulo: Schema.Attribute.String;
+    newsletterBoton: Schema.Attribute.String & Schema.Attribute.Required;
+    newsletterPlaceholder: Schema.Attribute.String;
+    newsletterSubtitulo: Schema.Attribute.Text;
+    newsletterTitulo: Schema.Attribute.String & Schema.Attribute.Required;
+    productosSeccionTitulo: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPaginaProductoPaginaProducto
+  extends Struct.SingleTypeSchema {
+  collectionName: 'pagina_productos';
+  info: {
+    displayName: 'PaginaProducto';
+    pluralName: 'pagina-productos';
+    singularName: 'pagina-producto';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pagina-producto.pagina-producto'
+    > &
+      Schema.Attribute.Private;
+    metaDescripcion: Schema.Attribute.Text;
+    metaTitulo: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    subtitulo: Schema.Attribute.Text;
+    titulo: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -542,6 +732,64 @@ export interface ApiProductoProducto extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiTextosGeneraleTextosGenerale
+  extends Struct.SingleTypeSchema {
+  collectionName: 'textos_generales';
+  info: {
+    displayName: 'TextosGenerale';
+    pluralName: 'textos-generales';
+    singularName: 'textos-generale';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    abrirMenu: Schema.Attribute.String;
+    agotado: Schema.Attribute.String & Schema.Attribute.Required;
+    anadirFavoritos: Schema.Attribute.String & Schema.Attribute.Required;
+    articulosRelacionados: Schema.Attribute.String & Schema.Attribute.Required;
+    buscarPlaceholder: Schema.Attribute.String & Schema.Attribute.Required;
+    cargarMas: Schema.Attribute.String & Schema.Attribute.Required;
+    compartir: Schema.Attribute.String & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    enStock: Schema.Attribute.String & Schema.Attribute.Required;
+    enviarMensaje: Schema.Attribute.String & Schema.Attribute.Required;
+    errorCargarContenido: Schema.Attribute.String & Schema.Attribute.Required;
+    errorCargarSitio: Schema.Attribute.String;
+    flechaDerecha: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'flechaDerecha'>;
+    flechaIzquierda: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::textos-generale.textos-generale'
+    > &
+      Schema.Attribute.Private;
+    mostrandoResultados: Schema.Attribute.String & Schema.Attribute.Required;
+    noProductosDestacados: Schema.Attribute.String & Schema.Attribute.Required;
+    noResultados: Schema.Attribute.String & Schema.Attribute.Required;
+    ordenarNombreAZ: Schema.Attribute.String;
+    ordenarPor: Schema.Attribute.String & Schema.Attribute.Required;
+    ordenarPrecioMayor: Schema.Attribute.String;
+    ordenarPrecioMenor: Schema.Attribute.String;
+    ordenarRecientes: Schema.Attribute.String;
+    productosRelacionados: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    simboloMoneda: Schema.Attribute.String & Schema.Attribute.Required;
+    tiempoLectura: Schema.Attribute.String & Schema.Attribute.Required;
+    todasCategorias: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    verMas: Schema.Attribute.String & Schema.Attribute.Required;
+    verProductos: Schema.Attribute.String & Schema.Attribute.Required;
+    verTodas: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }
 
@@ -1057,8 +1305,14 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::articulo.articulo': ApiArticuloArticulo;
+      'api::carrito.carrito': ApiCarritoCarrito;
       'api::categoria.categoria': ApiCategoriaCategoria;
+      'api::configuracion-sitio.configuracion-sitio': ApiConfiguracionSitioConfiguracionSitio;
+      'api::navegacion.navegacion': ApiNavegacionNavegacion;
+      'api::pagina-inicio.pagina-inicio': ApiPaginaInicioPaginaInicio;
+      'api::pagina-producto.pagina-producto': ApiPaginaProductoPaginaProducto;
       'api::producto.producto': ApiProductoProducto;
+      'api::textos-generale.textos-generale': ApiTextosGeneraleTextosGenerale;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

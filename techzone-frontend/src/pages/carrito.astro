@@ -1,0 +1,222 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { obtenerDeStrapi, STRAPI_URL_BASE } from "../lib/strapi";
+
+// Tipos
+interface CarritoTextos {
+  metaTitulo: string;
+  metaDescripcion: string;
+  titulo: string;
+  vacio: string;
+  total: string;
+  subtotal: string;
+  eliminar: string;
+  anadir: string;
+  cantidad: string;
+  irPagar: string;
+  seguirComprando: string;
+}
+
+interface TextosGenerale {
+  simboloMoneda: string;
+}
+
+// Obtener datos
+let carrito: CarritoTextos | null = null;
+let textos: TextosGenerale | null = null;
+let error = false;
+
+try {
+  const resCarrito = await obtenerDeStrapi<CarritoTextos>('carrito');
+  carrito = resCarrito.data;
+  
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+} catch (e) {
+  console.error('Error:', e);
+  error = true;
+}
+
+const simboloMoneda = textos?.simboloMoneda || '€';
+---
+
+<Layout titulo={carrito?.metaTitulo} descripcion={carrito?.metaDescripcion}>
+  {error || !carrito ? (
+    <div class="text-center py-20 text-error">
+      <p>Error al cargar.</p>
+    </div>
+  ) : (
+    <div class="py-8">
+      <h1 class="text-3xl font-bold mb-8">{carrito.titulo}</h1>
+      
+      <!-- Carrito Vacío -->
+      <div id="carrito-vacio" class="hidden text-center py-16">
+        <svg class="w-24 h-24 mx-auto text-gris mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <p class="text-gris text-lg mb-6">{carrito.vacio}</p>
+        <a href="/productos" class="inline-block px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+          {carrito.seguirComprando}
+        </a>
+      </div>
+      
+      <!-- Carrito con Items -->
+      <div id="carrito-contenido" class="hidden">
+        <div class="grid lg:grid-cols-3 gap-8">
+          
+          <!-- Lista de Items -->
+          <div class="lg:col-span-2 space-y-4">
+            <div id="carrito-items"></div>
+          </div>
+          
+          <!-- Resumen -->
+          <div class="lg:col-span-1">
+            <div class="bg-panel border border-borde rounded-2xl p-6 sticky top-24">
+              <h2 class="text-xl font-semibold mb-4">{carrito.subtotal}</h2>
+              
+              <div class="space-y-3 mb-6">
+                <div class="flex justify-between text-gris">
+                  <span>{carrito.subtotal}</span>
+                  <span id="carrito-subtotal">{simboloMoneda}0</span>
+                </div>
+                <div class="border-t border-borde pt-3 flex justify-between font-semibold text-lg">
+                  <span>{carrito.total}</span>
+                  <span id="carrito-total" class="text-acento">{simboloMoneda}0</span>
+                </div>
+              </div>
+              
+              <button 
+                id="btn-finalizar"
+                class="w-full py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition mb-3"
+              >
+                {carrito.irPagar}
+              </button>
+              
+              <a 
+                href="/productos" 
+                class="block w-full py-3 text-center border border-borde text-blanco rounded-xl hover:bg-panel transition"
+              >
+                {carrito.seguirComprando}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+</Layout>
+
+<!-- Template para item del carrito -->
+<template id="template-item">
+  <div class="item-carrito bg-panel border border-borde rounded-2xl p-4 flex gap-4" data-id="">
+    <div class="w-24 h-24 bg-fondo rounded-xl overflow-hidden flex-shrink-0">
+      <img src="" alt="" class="item-imagen w-full h-full object-contain" />
+    </div>
+    <div class="flex-grow">
+      <p class="text-xs text-acento uppercase tracking-wide item-marca"></p>
+      <h3 class="font-semibold item-nombre"></h3>
+      <p class="text-acento font-bold mt-1 item-precio"></p>
+    </div>
+    <div class="flex flex-col items-end justify-between">
+      <button class="btn-eliminar text-gris hover:text-error transition p-1" title="{carrito?.eliminar}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+      <div class="flex items-center gap-2">
+        <button class="btn-menos w-8 h-8 rounded-lg border border-borde hover:bg-acento hover:text-fondo hover:border-acento transition flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+          </svg>
+        </button>
+        <span class="item-cantidad w-8 text-center"></span>
+        <button class="btn-mas w-8 h-8 rounded-lg border border-borde hover:bg-acento hover:text-fondo hover:border-acento transition flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import { obtenerCarrito, eliminarDelCarrito, actualizarCantidad, obtenerPrecioTotal } from '../lib/carrito';
+  
+  const simboloMoneda = '€';
+  
+  // Elementos del DOM
+  const carritoVacio = document.getElementById('carrito-vacio');
+  const carritoContenido = document.getElementById('carrito-contenido');
+  const carritoItems = document.getElementById('carrito-items');
+  const carritoSubtotal = document.getElementById('carrito-subtotal');
+  const carritoTotal = document.getElementById('carrito-total');
+  const template = document.getElementById('template-item') as HTMLTemplateElement;
+  
+  // Renderizar carrito
+  function renderizarCarrito(): void {
+    const items = obtenerCarrito();
+    
+    if (items.length === 0) {
+      carritoVacio?.classList.remove('hidden');
+      carritoContenido?.classList.add('hidden');
+      return;
+    }
+    
+    carritoVacio?.classList.add('hidden');
+    carritoContenido?.classList.remove('hidden');
+    
+    // Limpiar items actuales
+    if (carritoItems) {
+      carritoItems.innerHTML = '';
+      
+      // Renderizar cada item
+      items.forEach(item => {
+        const clone = template.content.cloneNode(true) as DocumentFragment;
+        const div = clone.querySelector('.item-carrito') as HTMLElement;
+        
+        div.dataset.id = item.id.toString();
+        
+        const imagen = clone.querySelector('.item-imagen') as HTMLImageElement;
+        imagen.src = item.imagen;
+        imagen.alt = item.nombre;
+        
+        (clone.querySelector('.item-marca') as HTMLElement).textContent = item.marca;
+        (clone.querySelector('.item-nombre') as HTMLElement).textContent = item.nombre;
+        (clone.querySelector('.item-precio') as HTMLElement).textContent = `${simboloMoneda}${item.precio.toLocaleString()}`;
+        (clone.querySelector('.item-cantidad') as HTMLElement).textContent = item.cantidad.toString();
+        
+        // Event listeners
+        clone.querySelector('.btn-eliminar')?.addEventListener('click', () => {
+          eliminarDelCarrito(item.id);
+          renderizarCarrito();
+        });
+        
+        clone.querySelector('.btn-menos')?.addEventListener('click', () => {
+          actualizarCantidad(item.id, item.cantidad - 1);
+          renderizarCarrito();
+        });
+        
+        clone.querySelector('.btn-mas')?.addEventListener('click', () => {
+          actualizarCantidad(item.id, item.cantidad + 1);
+          renderizarCarrito();
+        });
+        
+        carritoItems.appendChild(clone);
+      });
+    }
+    
+    // Actualizar totales
+    const total = obtenerPrecioTotal();
+    if (carritoSubtotal) carritoSubtotal.textContent = `${simboloMoneda}${total.toLocaleString()}`;
+    if (carritoTotal) carritoTotal.textContent = `${simboloMoneda}${total.toLocaleString()}`;
+  }
+  
+  // Escuchar cambios en el carrito
+  window.addEventListener('carrito-actualizado', () => {
+    renderizarCarrito();
+  });
+  
+  // Renderizar al cargar
+  renderizarCarrito();
+</script>

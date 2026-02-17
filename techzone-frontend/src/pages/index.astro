@@ -1,17 +1,207 @@
 ---
+import Layout from "../layouts/Layout.astro";
+import { obtenerDeStrapi, STRAPI_URL_BASE } from "../lib/strapi";
 
+// Tipos
+interface PaginaInicio {
+  heroTitulo: string;
+  heroSubtitulo: string;
+  heroBadge: string;
+  heroBotonPrimario: string;
+  heroBotonSecundario: string;
+  categoriasSeccionTitulo: string;
+  categoriasSeccionSubtitulo: string;
+  productosSeccionTitulo: string;
+  newsletterTitulo: string;
+  newsletterSubtitulo: string;
+  newsletterBoton: string;
+  newsletterPlaceholder: string;
+  metaTitulo: string;
+  metaDescripcion: string;
+}
+
+interface TextosGenerale {
+  verProductos: string;
+  verTodas: string;
+  verMas: string;
+  anadirFavoritos: string;
+  simboloMoneda: string;
+  flechaIzquierda: string;
+  flechaDerecha: string;
+  errorCargarContenido: string;
+  noProductosDestacados: string;
+}
+
+interface Categoria {
+  id: number;
+  nombre: string;
+  slug: string;
+}
+
+interface Producto {
+  id: number;
+  nombre: string;
+  slug: string;
+  descripcionCorta: string;
+  precio: number;
+  marca: string;
+  destacado: boolean;
+  imagen: { url: string };
+  categoria: Categoria;
+}
+
+// Obtener datos
+let pagina: PaginaInicio | null = null;
+let textos: TextosGenerale | null = null;
+let categorias: Categoria[] = [];
+let productosDestacados: Producto[] = [];
+let error = false;
+
+try {
+  const resPagina = await obtenerDeStrapi<PaginaInicio>('pagina-inicio');
+  pagina = resPagina.data;
+  
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+  
+  const resCategorias = await obtenerDeStrapi<Categoria[]>('categorias');
+  categorias = resCategorias.data;
+  
+  const resProductos = await obtenerDeStrapi<Producto[]>('productos', 'populate=*&filters[destacado][$eq]=true');
+  productosDestacados = resProductos.data;
+} catch (e) {
+  console.error('Error:', e);
+  error = true;
+}
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout titulo={pagina?.metaTitulo} descripcion={pagina?.metaDescripcion}>
+  
+  {error || !pagina || !textos ? (
+    <div class="text-center py-20 text-error">
+      <p>{textos?.errorCargarContenido || 'Error al cargar el contenido.'}</p>
+    </div>
+  ) : (
+    <>
+      <!-- Hero Section -->
+      <section class="py-16 text-center">
+        <span class="inline-block px-4 py-1 text-sm font-medium text-acento bg-acento/10 rounded-full mb-6">
+          {pagina.heroBadge}
+        </span>
+        <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+          {pagina.heroTitulo.includes('.') ? (
+            <>
+              {pagina.heroTitulo.split('.')[0]}.<br/>
+              <span class="text-acento">{pagina.heroTitulo.split('.')[1]}</span>
+            </>
+          ) : (
+            pagina.heroTitulo
+          )}
+        </h1>
+        <p class="text-gris text-lg max-w-2xl mx-auto mb-8">
+          {pagina.heroSubtitulo}
+        </p>
+        <div class="flex gap-4 justify-center">
+          <a href="/productos" class="px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+            {pagina.heroBotonPrimario}
+          </a>
+          <a href="#categorias" class="px-6 py-3 border border-borde text-blanco rounded-xl hover:bg-panel transition">
+            {pagina.heroBotonSecundario}
+          </a>
+        </div>
+      </section>
+
+      <!-- Categorías -->
+      <section id="categorias" class="py-16">
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h2 class="text-2xl font-bold">{pagina.categoriasSeccionTitulo}</h2>
+            <p class="text-gris text-sm mt-1">{pagina.categoriasSeccionSubtitulo}</p>
+          </div>
+          <a href="/productos" class="text-acento text-sm hover:underline">{textos.verTodas}</a>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {categorias.map((categoria) => (
+            <a href={`/categorias/${categoria.slug}`} class="group p-6 bg-panel rounded-2xl border border-borde hover:border-acento/50 transition">
+              <h3 class="font-semibold text-blanco group-hover:text-acento transition">{categoria.nombre}</h3>
+              <p class="text-gris text-sm mt-1">{textos.verProductos}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Productos Destacados -->
+      <section class="py-16">
+        <div class="flex justify-between items-center mb-8">
+          <h2 class="text-2xl font-bold">{pagina.productosSeccionTitulo}</h2>
+          <div class="flex gap-2">
+            <button class="p-2 rounded-full border border-borde hover:bg-panel transition">{textos.flechaIzquierda}</button>
+            <button class="p-2 rounded-full bg-acento text-fondo hover:opacity-90 transition">{textos.flechaDerecha}</button>
+          </div>
+        </div>
+
+        {productosDestacados.length === 0 ? (
+          <div class="text-center py-12 text-gris">
+            <p>{textos.noProductosDestacados}</p>
+          </div>
+        ) : (
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {productosDestacados.map((producto) => (
+              <a href={`/productos/${producto.slug}`} class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+                <div class="aspect-square bg-fondo p-4 relative">
+                  {producto.imagen?.url && (
+                    <img 
+                      src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+                      alt={producto.nombre}
+                      class="w-full h-full object-contain"
+                    />
+                  )}
+                  <button 
+                    class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
+                    aria-label={textos.anadirFavoritos}
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="p-4">
+                  <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
+                  <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
+                  <div class="flex items-center justify-between mt-3">
+                    <span class="text-lg font-bold text-acento">{textos.simboloMoneda}{producto.precio.toLocaleString()}</span>
+                    <button class="p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <!-- Newsletter -->
+      <section class="py-16">
+        <div class="bg-acento/10 border border-acento/30 rounded-3xl p-8 md:p-12 text-center">
+          <h2 class="text-2xl md:text-3xl font-bold mb-4">{pagina.newsletterTitulo}</h2>
+          <p class="text-gris mb-6 max-w-xl mx-auto">{pagina.newsletterSubtitulo}</p>
+          <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input 
+              type="email" 
+              placeholder={pagina.newsletterPlaceholder}
+              class="flex-1 px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
+            />
+            <button type="submit" class="px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+              {pagina.newsletterBoton}
+            </button>
+          </form>
+        </div>
+      </section>
+    </>
+  )}
+
+</Layout>

@@ -1,0 +1,27 @@
+{
+  "kind": "singleType",
+  "collectionName": "pagina_productos",
+  "info": {
+    "singularName": "pagina-producto",
+    "pluralName": "pagina-productos",
+    "displayName": "PaginaProducto"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "metaTitulo": {
+      "type": "string"
+    },
+    "metaDescripcion": {
+      "type": "text"
+    },
+    "titulo": {
+      "type": "string"
+    },
+    "subtitulo": {
+      "type": "text"
+    }
+  }
+}

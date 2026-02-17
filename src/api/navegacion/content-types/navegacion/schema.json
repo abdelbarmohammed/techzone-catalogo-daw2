@@ -1,0 +1,50 @@
+{
+  "kind": "singleType",
+  "collectionName": "navegacions",
+  "info": {
+    "singularName": "navegacion",
+    "pluralName": "navegacions",
+    "displayName": "Navegacion"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "inicio": {
+      "type": "string",
+      "required": true
+    },
+    "productos": {
+      "type": "string"
+    },
+    "blog": {
+      "type": "string"
+    },
+    "contacto": {
+      "type": "string"
+    },
+    "explorar": {
+      "type": "string"
+    },
+    "legal": {
+      "type": "string"
+    },
+    "privacidad": {
+      "type": "string"
+    },
+    "terminos": {
+      "type": "string"
+    },
+    "carrito": {
+      "type": "string"
+    },
+    "catalogo": {
+      "type": "string"
+    },
+    "social": {
+      "type": "string",
+      "default": "social"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+---
+const anioActual = new Date().getFullYear();
+---
+
+<footer class="border-t border-borde/60 bg-fondo">
+	<div class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
+		<div class="grid gap-8 md:grid-cols-3">
+			<div class="space-y-3">
+				<div class="flex items-center gap-2">
+					<span class="h-2 w-2 rounded-full bg-acento"></span>
+					<span class="font-semibold">GaleríaTech</span>
+				</div>
+				<p class="text-sm text-gris max-w-sm">
+					Catálogo tecnológico con estética premium. Productos, categorías y artículos desde Strapi.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-2 gap-6 md:col-span-2 md:grid-cols-3">
+				<div class="space-y-2">
+					<p class="text-sm font-semibold text-blanco">Explorar</p>
+					<ul class="space-y-1 text-sm text-gris">
+						<li><a class="hover:text-blanco transition" href="/">Home</a></li>
+						<li><a class="hover:text-blanco transition" href="/productos">Products</a></li>
+						<li><a class="hover:text-blanco transition" href="/blog">Blog</a></li>
+					</ul>
+				</div>
+
+				<div class="space-y-2">
+					<p class="text-sm font-semibold text-blanco">Legal</p>
+					<ul class="space-y-1 text-sm text-gris">
+						<li><a class="hover:text-blanco transition" href="/privacidad">Privacidad</a></li>
+						<li><a class="hover:text-blanco transition" href="/terminos">Términos</a></li>
+					</ul>
+				</div>
+
+				<div class="space-y-2">
+					<p class="text-sm font-semibold text-blanco">Contacto</p>
+					<ul class="space-y-1 text-sm text-gris">
+						<li><a class="hover:text-blanco transition" href="mailto:info@galeriatech.es">info@galeriatech.es</a></li>
+						<li><a class="hover:text-blanco transition" href="https://galeriatech.es">galeriatech.es</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="mt-10 flex flex-col gap-3 border-t border-borde/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
+			<p class="text-xs text-gris">© {anioActual} GaleríaTech. Todos los derechos reservados.</p>
+
+			<div class="flex items-center gap-3 text-xs text-gris">
+				<span class="inline-flex items-center gap-2">
+					<span class="h-1.5 w-1.5 rounded-full bg-acento"></span>
+					Dark · Cyan · Astro
+				</span>
+			</div>
+		</div>
+	</div>
+</footer>

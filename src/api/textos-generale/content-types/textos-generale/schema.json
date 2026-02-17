@@ -1,0 +1,121 @@
+{
+  "kind": "singleType",
+  "collectionName": "textos_generales",
+  "info": {
+    "singularName": "textos-generale",
+    "pluralName": "textos-generales",
+    "displayName": "TextosGenerale"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "verProductos": {
+      "type": "string",
+      "required": true
+    },
+    "verTodas": {
+      "type": "string",
+      "required": true
+    },
+    "verMas": {
+      "type": "string",
+      "required": true
+    },
+    "anadirFavoritos": {
+      "type": "string",
+      "required": true
+    },
+    "compartir": {
+      "type": "string",
+      "required": true
+    },
+    "enviarMensaje": {
+      "type": "string",
+      "required": true
+    },
+    "enStock": {
+      "type": "string",
+      "required": true
+    },
+    "agotado": {
+      "type": "string",
+      "required": true
+    },
+    "tiempoLectura": {
+      "type": "string",
+      "required": true
+    },
+    "productosRelacionados": {
+      "type": "string",
+      "required": true
+    },
+    "articulosRelacionados": {
+      "type": "string",
+      "required": true
+    },
+    "buscarPlaceholder": {
+      "type": "string",
+      "required": true
+    },
+    "ordenarPor": {
+      "type": "string",
+      "required": true
+    },
+    "mostrandoResultados": {
+      "type": "string",
+      "required": true
+    },
+    "noResultados": {
+      "type": "string",
+      "required": true
+    },
+    "cargarMas": {
+      "type": "string",
+      "required": true
+    },
+    "errorCargarContenido": {
+      "type": "string",
+      "required": true
+    },
+    "noProductosDestacados": {
+      "type": "string",
+      "required": true
+    },
+    "simboloMoneda": {
+      "type": "string",
+      "required": true
+    },
+    "flechaIzquierda": {
+      "type": "string",
+      "required": true
+    },
+    "flechaDerecha": {
+      "type": "string",
+      "default": "flechaDerecha",
+      "required": true
+    },
+    "errorCargarSitio": {
+      "type": "string"
+    },
+    "abrirMenu": {
+      "type": "string"
+    },
+    "ordenarPrecioMenor": {
+      "type": "string"
+    },
+    "ordenarPrecioMayor": {
+      "type": "string"
+    },
+    "ordenarNombreAZ": {
+      "type": "string"
+    },
+    "ordenarRecientes": {
+      "type": "string"
+    },
+    "todasCategorias": {
+      "type": "string"
+    }
+  }
+}
