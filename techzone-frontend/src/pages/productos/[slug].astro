@@ -1,0 +1,371 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { obtenerDeStrapi, STRAPI_URL_BASE } from "../../lib/strapi";
+
+// Tipos
+interface Categoria {
+  id: number;
+  nombre: string;
+  slug: string;
+}
+
+interface Imagen {
+  url: string;
+  alternativeText?: string;
+}
+
+interface Producto {
+  id: number;
+  nombre: string;
+  slug: string;
+  descripcion: any[]; // Strapi blocks
+  descripcionCorta: string;
+  precio: number;
+  marca: string;
+  enStock: boolean;
+  destacado: boolean;
+  imagen: Imagen;
+  imagenes?: Imagen[];
+  categoria: Categoria;
+}
+
+interface TextosGenerale {
+  simboloMoneda: string;
+  anadirAlCarrito: string;
+  productoAnadido: string;
+  enStock: string;
+  agotado: string;
+  anadirFavoritos: string;
+  compartir: string;
+  productosRelacionados: string;
+  verMas: string;
+}
+
+// Generar rutas estáticas para todos los productos
+export async function getStaticPaths() {
+  const res = await obtenerDeStrapi<Producto[]>('productos', 'populate=*');
+  const productos = res.data;
+
+  return productos.map((producto) => ({
+    params: { slug: producto.slug },
+    props: { producto }
+  }));
+}
+
+// Obtener props del producto actual
+const { producto } = Astro.props;
+
+// Obtener textos generales
+let textos: TextosGenerale | null = null;
+let productosRelacionados: Producto[] = [];
+
+try {
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+
+  // Obtener productos relacionados (misma categoría, excluyendo el actual)
+  if (producto.categoria?.id) {
+    const resRelacionados = await obtenerDeStrapi<Producto[]>(
+      'productos',
+      `populate=*&filters[categoria][id][$eq]=${producto.categoria.id}&filters[id][$ne]=${producto.id}&pagination[limit]=4`
+    );
+    productosRelacionados = resRelacionados.data;
+  }
+} catch (e) {
+  console.error('Error:', e);
+}
+
+// Función para renderizar bloques de Strapi
+function renderizarBloques(bloques: any[]): string {
+  if (!bloques || !Array.isArray(bloques)) return '';
+  
+  return bloques.map(bloque => {
+    if (bloque.type === 'paragraph') {
+      const texto = bloque.children?.map((child: any) => {
+        let contenido = child.text || '';
+        if (child.bold) contenido = `<strong>${contenido}</strong>`;
+        if (child.italic) contenido = `<em>${contenido}</em>`;
+        if (child.underline) contenido = `<u>${contenido}</u>`;
+        return contenido;
+      }).join('') || '';
+      return `<p class="mb-4">${texto}</p>`;
+    }
+    if (bloque.type === 'heading') {
+      const nivel = bloque.level || 2;
+      const texto = bloque.children?.map((child: any) => child.text).join('') || '';
+      const clases = nivel === 2 ? 'text-xl font-bold mb-3 mt-6' : 'text-lg font-semibold mb-2 mt-4';
+      return `<h${nivel} class="${clases}">${texto}</h${nivel}>`;
+    }
+    if (bloque.type === 'list') {
+      const tipo = bloque.format === 'ordered' ? 'ol' : 'ul';
+      const clasesTipo = tipo === 'ol' ? 'list-decimal' : 'list-disc';
+      const items = bloque.children?.map((item: any) => {
+        const texto = item.children?.map((child: any) => child.text).join('') || '';
+        return `<li>${texto}</li>`;
+      }).join('') || '';
+      return `<${tipo} class="${clasesTipo} pl-6 mb-4 space-y-1">${items}</${tipo}>`;
+    }
+    return '';
+  }).join('');
+}
+
+// Combinar imagen principal con galería
+const todasLasImagenes = [
+  producto.imagen,
+  ...(producto.imagenes || [])
+].filter(Boolean);
+
+const metaTitulo = `${producto.nombre} | GaleríaTech`;
+const metaDescripcion = producto.descripcionCorta;
+---
+
+<Layout titulo={metaTitulo} descripcion={metaDescripcion}>
+  
+  <!-- Breadcrumb -->
+  <nav class="mb-6 text-sm">
+    <ol class="flex items-center gap-2 text-gris">
+      <li><a href="/" class="hover:text-blanco transition">Inicio</a></li>
+      <li>/</li>
+      <li><a href="/productos" class="hover:text-blanco transition">Productos</a></li>
+      {producto.categoria && (
+        <>
+          <li>/</li>
+          <li><a href={`/categorias/${producto.categoria.slug}`} class="hover:text-blanco transition">{producto.categoria.nombre}</a></li>
+        </>
+      )}
+      <li>/</li>
+      <li class="text-blanco">{producto.nombre}</li>
+    </ol>
+  </nav>
+
+  <!-- Producto Principal -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
+    
+    <!-- Galería de Imágenes -->
+    <div class="space-y-4">
+      <!-- Imagen Principal -->
+      <div class="aspect-square bg-panel rounded-2xl border border-borde p-6 flex items-center justify-center">
+        <img
+          id="imagen-principal"
+          src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+          alt={producto.nombre}
+          class="max-w-full max-h-full object-contain"
+        />
+      </div>
+      
+      <!-- Miniaturas -->
+      {todasLasImagenes.length > 1 && (
+        <div class="flex gap-3 overflow-x-auto pb-2">
+          {todasLasImagenes.map((img, index) => (
+            <button
+              class={`miniatura flex-shrink-0 w-20 h-20 rounded-xl border p-2 transition ${index === 0 ? 'border-acento bg-acento/10' : 'border-borde hover:border-acento/50'}`}
+              data-imagen={`${STRAPI_URL_BASE}${img.url}`}
+            >
+              <img
+                src={`${STRAPI_URL_BASE}${img.url}`}
+                alt={`${producto.nombre} - imagen ${index + 1}`}
+                class="w-full h-full object-contain"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+
+    <!-- Información del Producto -->
+    <div class="space-y-6">
+      <!-- Marca y Categoría -->
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-acento uppercase tracking-wide font-medium">{producto.marca}</span>
+        {producto.categoria && (
+          <>
+            <span class="text-gris">•</span>
+            <a href={`/categorias/${producto.categoria.slug}`} class="text-sm text-gris hover:text-blanco transition">
+              {producto.categoria.nombre}
+            </a>
+          </>
+        )}
+      </div>
+
+      <!-- Nombre -->
+      <h1 class="text-3xl lg:text-4xl font-bold">{producto.nombre}</h1>
+
+      <!-- Descripción Corta -->
+      <p class="text-gris text-lg">{producto.descripcionCorta}</p>
+
+      <!-- Precio y Stock -->
+      <div class="flex items-center gap-4">
+        <span class="text-3xl font-bold text-acento">
+          {textos?.simboloMoneda || '€'}{producto.precio.toLocaleString()}
+        </span>
+        <span class={`px-3 py-1 rounded-full text-sm font-medium ${producto.enStock ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+          {producto.enStock ? (textos?.enStock || 'En stock') : (textos?.agotado || 'Agotado')}
+        </span>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button
+          id="boton-carrito-principal"
+          class={`flex-1 py-4 px-6 rounded-xl font-semibold flex items-center justify-center gap-2 transition ${producto.enStock ? 'bg-acento text-fondo hover:opacity-90' : 'bg-gris/20 text-gris cursor-not-allowed'}`}
+          data-id={producto.id}
+          data-nombre={producto.nombre}
+          data-precio={producto.precio}
+          data-imagen={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+          data-slug={producto.slug}
+          disabled={!producto.enStock}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          {textos?.anadirAlCarrito || 'Añadir al carrito'}
+        </button>
+        
+        <button
+          class="p-4 rounded-xl border border-borde hover:border-acento/50 hover:bg-panel transition"
+          aria-label={textos?.anadirFavoritos || 'Añadir a favoritos'}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
+        
+        <button
+          class="p-4 rounded-xl border border-borde hover:border-acento/50 hover:bg-panel transition"
+          aria-label={textos?.compartir || 'Compartir'}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Descripción Completa -->
+      <div class="pt-6 border-t border-borde">
+        <h2 class="text-xl font-bold mb-4">Descripción</h2>
+        <div class="prose prose-invert prose-sm max-w-none text-gris">
+          <Fragment set:html={renderizarBloques(producto.descripcion)} />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Productos Relacionados -->
+  {productosRelacionados.length > 0 && (
+    <section class="py-12 border-t border-borde">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-bold">{textos?.productosRelacionados || 'Productos relacionados'}</h2>
+        <a href={`/categorias/${producto.categoria?.slug}`} class="text-acento text-sm hover:underline">
+          {textos?.verMas || 'Ver más'} →
+        </a>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {productosRelacionados.map((prod) => (
+          <div class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+            <a href={`/productos/${prod.slug}`} class="block">
+              <div class="aspect-square bg-fondo p-4">
+                {prod.imagen?.url && (
+                  <img
+                    src={`${STRAPI_URL_BASE}${prod.imagen.url}`}
+                    alt={prod.nombre}
+                    class="w-full h-full object-contain"
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              <div class="p-4">
+                <span class="text-xs text-acento uppercase tracking-wide">{prod.marca}</span>
+                <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{prod.nombre}</h3>
+              </div>
+            </a>
+            <div class="px-4 pb-4 flex items-center justify-between">
+              <span class="text-lg font-bold text-acento">{textos?.simboloMoneda || '€'}{prod.precio.toLocaleString()}</span>
+              <button
+                class="boton-carrito-relacionado p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition"
+                data-id={prod.id}
+                data-nombre={prod.nombre}
+                data-precio={prod.precio}
+                data-imagen={prod.imagen?.url ? `${STRAPI_URL_BASE}${prod.imagen.url}` : ''}
+                data-slug={prod.slug}
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Scripts -->
+  <script>
+    import { anadirAlCarrito } from '../../lib/carrito.js';
+
+    // Cambio de imagen en galería
+    const imagenPrincipal = document.getElementById('imagen-principal') as HTMLImageElement;
+    const miniaturas = document.querySelectorAll('.miniatura');
+
+    miniaturas.forEach(miniatura => {
+      miniatura.addEventListener('click', () => {
+        const nuevaImagen = (miniatura as HTMLElement).dataset.imagen;
+        if (nuevaImagen && imagenPrincipal) {
+          imagenPrincipal.src = nuevaImagen;
+          
+          // Actualizar estilos de miniaturas
+          miniaturas.forEach(m => {
+            m.classList.remove('border-acento', 'bg-acento/10');
+            m.classList.add('border-borde');
+          });
+          miniatura.classList.remove('border-borde');
+          miniatura.classList.add('border-acento', 'bg-acento/10');
+        }
+      });
+    });
+
+    // Botón principal de añadir al carrito
+    const botonPrincipal = document.getElementById('boton-carrito-principal');
+    if (botonPrincipal && !botonPrincipal.hasAttribute('disabled')) {
+      botonPrincipal.addEventListener('click', () => {
+        const producto = {
+          id: parseInt(botonPrincipal.dataset.id || '0'),
+          nombre: botonPrincipal.dataset.nombre || '',
+          precio: parseFloat(botonPrincipal.dataset.precio || '0'),
+          imagen: botonPrincipal.dataset.imagen || '',
+          slug: botonPrincipal.dataset.slug || ''
+        };
+        
+        anadirAlCarrito(producto);
+        
+        if ((window as any).mostrarToast) {
+          (window as any).mostrarToast('Producto añadido al carrito');
+        }
+      });
+    }
+
+    // Botones de productos relacionados
+    document.querySelectorAll('.boton-carrito-relacionado').forEach(boton => {
+      boton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const btn = e.currentTarget as HTMLElement;
+        const producto = {
+          id: parseInt(btn.dataset.id || '0'),
+          nombre: btn.dataset.nombre || '',
+          precio: parseFloat(btn.dataset.precio || '0'),
+          imagen: btn.dataset.imagen || '',
+          slug: btn.dataset.slug || ''
+        };
+        
+        anadirAlCarrito(producto);
+        
+        if ((window as any).mostrarToast) {
+          (window as any).mostrarToast('Producto añadido al carrito');
+        }
+      });
+    });
+  </script>
+</Layout>

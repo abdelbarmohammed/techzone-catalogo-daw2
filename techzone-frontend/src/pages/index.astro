@@ -32,6 +32,7 @@ interface TextosGenerale {
   noProductosDestacados: string;
   anadirAlCarrito: string;
   productoAnadido: string;
+  tiempoLectura: string;
 }
 
 interface Categoria {
@@ -52,11 +53,24 @@ interface Producto {
   categoria: Categoria;
 }
 
+interface Articulo {
+  id: number;
+  titulo: string;
+  slug: string;
+  extracto: string;
+  autor: string;
+  fechaPublicacion: string;
+  contenido: any[];
+  imagen: { url: string };
+  createdAt: string;
+}
+
 // Obtener datos
 let pagina: PaginaInicio | null = null;
 let textos: TextosGenerale | null = null;
 let categorias: Categoria[] = [];
 let productosDestacados: Producto[] = [];
+let articulosRecientes: Articulo[] = [];
 let error = false;
 
 try {
@@ -71,10 +85,79 @@ try {
   
   const resProductos = await obtenerDeStrapi<Producto[]>('productos', 'populate=*&filters[destacado][$eq]=true');
   productosDestacados = resProductos.data;
+
+  const resArticulos = await obtenerDeStrapi<Articulo[]>('articulos', 'populate=*&sort=fechaPublicacion:desc&pagination[limit]=3');
+  articulosRecientes = resArticulos.data;
 } catch (e) {
   console.error('Error:', e);
   error = true;
 }
+
+// Función para calcular tiempo de lectura
+function calcularTiempoLectura(contenido: any[]): number {
+  if (!contenido || !Array.isArray(contenido)) return 1;
+  const texto = contenido.map(bloque => {
+    if (bloque.children) {
+      return bloque.children.map((child: any) => child.text || '').join(' ');
+    }
+    return '';
+  }).join(' ');
+  const palabras = texto.split(/\s+/).filter(Boolean).length;
+  const minutos = Math.ceil(palabras / 200);
+  return minutos < 1 ? 1 : minutos;
+}
+
+// Formatear fecha
+function formatearFecha(fecha: string): string {
+  if (!fecha) return '';
+  return new Date(fecha).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+// Marcas destacadas (hardcoded - no necesita CMS)
+const marcas = [
+  { nombre: 'Apple', logo: '🍎' },
+  { nombre: 'Samsung', logo: '📱' },
+  { nombre: 'Sony', logo: '🎧' },
+  { nombre: 'Microsoft', logo: '💻' },
+  { nombre: 'Google', logo: '🔍' },
+  { nombre: 'Xiaomi', logo: '📲' },
+];
+
+// Beneficios (hardcoded - no necesita CMS)
+const beneficios = [
+  {
+    icono: 'truck',
+    titulo: 'Envío Gratis',
+    descripcion: 'En pedidos superiores a 50€'
+  },
+  {
+    icono: 'shield',
+    titulo: 'Garantía 2 Años',
+    descripcion: 'Protección completa en todos los productos'
+  },
+  {
+    icono: 'refresh',
+    titulo: 'Devolución Fácil',
+    descripcion: '30 días para cambios y devoluciones'
+  },
+  {
+    icono: 'headphones',
+    titulo: 'Soporte 24/7',
+    descripcion: 'Atención al cliente siempre disponible'
+  }
+];
+
+// Estadísticas
+const estadisticas = [
+  { numero: '10K+', label: 'Clientes Satisfechos' },
+  { numero: '500+', label: 'Productos' },
+  { numero: '50+', label: 'Marcas Premium' },
+  { numero: '4.9', label: 'Valoración Media' }
+];
 ---
 
 <Layout titulo={pagina?.metaTitulo} descripcion={pagina?.metaDescripcion}>
@@ -86,11 +169,11 @@ try {
   ) : (
     <>
       <!-- Hero Section -->
-      <section class="py-16 text-center">
-        <span class="inline-block px-4 py-1 text-sm font-medium text-acento bg-acento/10 rounded-full mb-6">
+      <section class="py-16 md:py-24 text-center">
+        <span class="inline-block px-4 py-1 text-sm font-medium text-acento bg-acento/10 rounded-full mb-6 animate-pulse">
           {pagina.heroBadge}
         </span>
-        <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+        <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
           {pagina.heroTitulo.includes('.') ? (
             <>
               {pagina.heroTitulo.split('.')[0]}.<br/>
@@ -100,16 +183,62 @@ try {
             pagina.heroTitulo
           )}
         </h1>
-        <p class="text-gris text-lg max-w-2xl mx-auto mb-8">
+        <p class="text-gris text-lg md:text-xl max-w-2xl mx-auto mb-8">
           {pagina.heroSubtitulo}
         </p>
-        <div class="flex gap-4 justify-center">
-          <a href="/productos" class="px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/productos" class="px-8 py-4 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition text-lg">
             {pagina.heroBotonPrimario}
           </a>
-          <a href="#categorias" class="px-6 py-3 border border-borde text-blanco rounded-xl hover:bg-panel transition">
+          <a href="#categorias" class="px-8 py-4 border border-borde text-blanco rounded-xl hover:bg-panel transition text-lg">
             {pagina.heroBotonSecundario}
           </a>
+        </div>
+        
+        <!-- Estadísticas en Hero -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-16 border-t border-borde">
+          {estadisticas.map((stat) => (
+            <div class="text-center">
+              <p class="text-3xl md:text-4xl font-bold text-acento">{stat.numero}</p>
+              <p class="text-sm text-gris mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Beneficios -->
+      <section class="py-12 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-panel/50">
+        <div class="max-w-6xl mx-auto">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {beneficios.map((beneficio) => (
+              <div class="flex flex-col items-center text-center p-4">
+                <div class="w-12 h-12 rounded-2xl bg-acento/10 flex items-center justify-center mb-4">
+                  {beneficio.icono === 'truck' && (
+                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                  )}
+                  {beneficio.icono === 'shield' && (
+                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  )}
+                  {beneficio.icono === 'refresh' && (
+                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  )}
+                  {beneficio.icono === 'headphones' && (
+                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  )}
+                </div>
+                <h3 class="font-semibold text-blanco mb-1">{beneficio.titulo}</h3>
+                <p class="text-xs text-gris">{beneficio.descripcion}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -117,29 +246,51 @@ try {
       <section id="categorias" class="py-16">
         <div class="flex justify-between items-center mb-8">
           <div>
-            <h2 class="text-2xl font-bold">{pagina.categoriasSeccionTitulo}</h2>
+            <h2 class="text-2xl md:text-3xl font-bold">{pagina.categoriasSeccionTitulo}</h2>
             <p class="text-gris text-sm mt-1">{pagina.categoriasSeccionSubtitulo}</p>
           </div>
-          <a href="/productos" class="text-acento text-sm hover:underline">{textos.verTodas}</a>
+          <a href="/productos" class="text-acento text-sm hover:underline hidden sm:block">{textos.verTodas} →</a>
         </div>
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categorias.map((categoria) => (
-            <a href={`/categorias/${categoria.slug}`} class="group p-6 bg-panel rounded-2xl border border-borde hover:border-acento/50 transition">
+          {categorias.map((categoria, index) => (
+            <a 
+              href={`/categorias/${categoria.slug}`} 
+              class="group relative p-6 bg-panel rounded-2xl border border-borde hover:border-acento/50 transition overflow-hidden"
+            >
+              <div class="absolute top-0 right-0 w-24 h-24 bg-acento/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-acento/10 transition"></div>
+              <span class="text-3xl mb-4 block">
+                {index === 0 && '💻'}
+                {index === 1 && '📱'}
+                {index === 2 && '🎧'}
+                {index === 3 && '⌚'}
+              </span>
               <h3 class="font-semibold text-blanco group-hover:text-acento transition">{categoria.nombre}</h3>
-              <p class="text-gris text-sm mt-1">{textos.verProductos}</p>
+              <p class="text-gris text-sm mt-1">{textos.verProductos} →</p>
             </a>
           ))}
         </div>
+        <a href="/productos" class="text-acento text-sm hover:underline block text-center mt-6 sm:hidden">{textos.verTodas} →</a>
       </section>
 
       <!-- Productos Destacados -->
       <section class="py-16">
         <div class="flex justify-between items-center mb-8">
-          <h2 class="text-2xl font-bold">{pagina.productosSeccionTitulo}</h2>
+          <div>
+            <h2 class="text-2xl md:text-3xl font-bold">{pagina.productosSeccionTitulo}</h2>
+            <p class="text-gris text-sm mt-1">Los favoritos de nuestros clientes</p>
+          </div>
           <div class="flex gap-2">
-            <button class="p-2 rounded-full border border-borde hover:bg-panel transition">{textos.flechaIzquierda}</button>
-            <button class="p-2 rounded-full bg-acento text-fondo hover:opacity-90 transition">{textos.flechaDerecha}</button>
+            <button id="btn-prev" class="p-2 rounded-full border border-borde hover:bg-panel transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button id="btn-next" class="p-2 rounded-full bg-acento text-fondo hover:opacity-90 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -148,9 +299,9 @@ try {
             <p>{textos.noProductosDestacados}</p>
           </div>
         ) : (
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div id="carousel-productos" class="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
             {productosDestacados.map((producto) => (
-              <div class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+              <div class="flex-shrink-0 w-[280px] snap-start group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
                 <a href={`/productos/${producto.slug}`} class="block">
                   <div class="aspect-square bg-fondo p-4 relative">
                     {producto.imagen?.url && (
@@ -197,30 +348,124 @@ try {
         )}
       </section>
 
+      <!-- Banner Promocional -->
+      <section class="py-16">
+        <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-acento/20 to-purple-500/20 border border-acento/30">
+          <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.05%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+          <div class="relative p-8 md:p-12 lg:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="text-center md:text-left">
+              <span class="inline-block px-3 py-1 bg-acento/20 text-acento text-sm font-medium rounded-full mb-4">
+                Oferta Especial
+              </span>
+              <h2 class="text-3xl md:text-4xl font-bold mb-4">
+                Hasta <span class="text-acento">30% OFF</span> en Auriculares
+              </h2>
+              <p class="text-gris mb-6 max-w-md">
+                Disfruta del mejor sonido con nuestra selección premium de auriculares. Oferta por tiempo limitado.
+              </p>
+              <a href="/categorias/auriculares" class="inline-flex items-center gap-2 px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+                Ver Ofertas
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+            </div>
+            <div class="text-8xl">🎧</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Marcas -->
+      <section class="py-16">
+        <div class="text-center mb-10">
+          <h2 class="text-2xl md:text-3xl font-bold mb-2">Marcas de Confianza</h2>
+          <p class="text-gris">Trabajamos con las mejores marcas del mercado</p>
+        </div>
+        <div class="flex flex-wrap justify-center items-center gap-8 md:gap-12">
+          {marcas.map((marca) => (
+            <div class="flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition cursor-pointer">
+              <span class="text-4xl">{marca.logo}</span>
+              <span class="text-sm text-gris">{marca.nombre}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Últimos Artículos del Blog -->
+      {articulosRecientes.length > 0 && (
+        <section class="py-16">
+          <div class="flex justify-between items-center mb-8">
+            <div>
+              <h2 class="text-2xl md:text-3xl font-bold">Últimos del Blog</h2>
+              <p class="text-gris text-sm mt-1">Novedades y guías de tecnología</p>
+            </div>
+            <a href="/blog" class="text-acento text-sm hover:underline hidden sm:block">{textos.verMas} →</a>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {articulosRecientes.map((articulo) => (
+              <article class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+                <a href={`/blog/${articulo.slug}`} class="block">
+                  <div class="aspect-video bg-fondo relative overflow-hidden">
+                    {articulo.imagen?.url && (
+                      <img
+                        src={`${STRAPI_URL_BASE}${articulo.imagen.url}`}
+                        alt={articulo.titulo}
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-center gap-3 text-xs text-gris mb-3">
+                      <span>{formatearFecha(articulo.fechaPublicacion || articulo.createdAt)}</span>
+                      <span>•</span>
+                      <span>{calcularTiempoLectura(articulo.contenido)} min {textos.tiempoLectura || 'de lectura'}</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-blanco group-hover:text-acento transition mb-2 line-clamp-2">
+                      {articulo.titulo}
+                    </h3>
+                    <p class="text-gris text-sm line-clamp-2">
+                      {articulo.extracto}
+                    </p>
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+          <a href="/blog" class="text-acento text-sm hover:underline block text-center mt-6 sm:hidden">{textos.verMas} →</a>
+        </section>
+      )}
+
       <!-- Newsletter -->
       <section class="py-16">
         <div class="bg-acento/10 border border-acento/30 rounded-3xl p-8 md:p-12 text-center">
-          <h2 class="text-2xl md:text-3xl font-bold mb-4">{pagina.newsletterTitulo}</h2>
-          <p class="text-gris mb-6 max-w-xl mx-auto">{pagina.newsletterSubtitulo}</p>
-          <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input 
-              type="email" 
-              placeholder={pagina.newsletterPlaceholder}
-              class="flex-1 px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
-            />
-            <button type="submit" class="px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
-              {pagina.newsletterBoton}
-            </button>
-          </form>
+          <div class="max-w-2xl mx-auto">
+            <span class="text-4xl mb-4 block">📬</span>
+            <h2 class="text-2xl md:text-3xl font-bold mb-4">{pagina.newsletterTitulo}</h2>
+            <p class="text-gris mb-6">{pagina.newsletterSubtitulo}</p>
+            <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <input 
+                type="email" 
+                placeholder={pagina.newsletterPlaceholder}
+                class="flex-1 px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
+              />
+              <button type="submit" class="px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+                {pagina.newsletterBoton}
+              </button>
+            </form>
+            <p class="text-xs text-gris mt-4">Sin spam. Cancela cuando quieras.</p>
+          </div>
         </div>
       </section>
     </>
   )}
 
-  <!-- Script para añadir al carrito -->
+  <!-- Scripts -->
   <script>
     import { anadirAlCarrito } from '../lib/carrito.js';
 
+    // Carrito
     document.querySelectorAll('.boton-carrito').forEach(boton => {
       boton.addEventListener('click', (e) => {
         e.preventDefault();
@@ -237,11 +482,37 @@ try {
         
         anadirAlCarrito(producto);
         
-        // Mostrar toast
         if ((window as any).mostrarToast) {
           (window as any).mostrarToast('Producto añadido al carrito');
         }
       });
     });
+
+    // Carousel de productos
+    const carousel = document.getElementById('carousel-productos');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    if (carousel && btnPrev && btnNext) {
+      const scrollAmount = 300;
+
+      btnNext.addEventListener('click', () => {
+        carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      });
+
+      btnPrev.addEventListener('click', () => {
+        carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      });
+    }
   </script>
+
+  <style>
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
 </Layout>

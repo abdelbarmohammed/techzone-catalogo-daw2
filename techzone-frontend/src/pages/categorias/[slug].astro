@@ -1,0 +1,312 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { obtenerDeStrapi, STRAPI_URL_BASE } from "../../lib/strapi";
+
+// Tipos
+interface Categoria {
+  id: number;
+  nombre: string;
+  slug: string;
+  descripcion?: string;
+  imagen?: { url: string }[];
+}
+
+interface Producto {
+  id: number;
+  nombre: string;
+  slug: string;
+  descripcionCorta: string;
+  precio: number;
+  marca: string;
+  enStock: boolean;
+  imagen: { url: string };
+  categoria: Categoria;
+  createdAt: string;
+}
+
+interface TextosGenerale {
+  simboloMoneda: string;
+  anadirAlCarrito: string;
+  anadirFavoritos: string;
+  buscarPlaceholder: string;
+  ordenarPor: string;
+  ordenarPrecioMenor: string;
+  ordenarPrecioMayor: string;
+  ordenarNombreAZ: string;
+  ordenarRecientes: string;
+  mostrandoResultados: string;
+  noResultados: string;
+}
+
+// Generar rutas estáticas para todas las categorías
+export async function getStaticPaths() {
+  const resCategorias = await obtenerDeStrapi<Categoria[]>('categorias');
+  const categorias = resCategorias.data;
+
+  return categorias.map((categoria) => ({
+    params: { slug: categoria.slug },
+    props: { categoria }
+  }));
+}
+
+// Obtener props
+const { categoria } = Astro.props;
+
+// Obtener textos y productos de esta categoría
+let textos: TextosGenerale | null = null;
+let productos: Producto[] = [];
+
+try {
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+
+  const resProductos = await obtenerDeStrapi<Producto[]>(
+    'productos',
+    `populate=*&filters[categoria][slug][$eq]=${categoria.slug}`
+  );
+  productos = resProductos.data;
+} catch (e) {
+  console.error('Error:', e);
+}
+
+const totalProductos = productos.length;
+const metaTitulo = `${categoria.nombre} | GaleríaTech`;
+const metaDescripcion = categoria.descripcion || `Explora nuestra colección de ${categoria.nombre}`;
+---
+
+<Layout titulo={metaTitulo} descripcion={metaDescripcion}>
+  
+  <!-- Breadcrumb -->
+  <nav class="mb-6 text-sm">
+    <ol class="flex items-center gap-2 text-gris">
+      <li><a href="/" class="hover:text-blanco transition">Inicio</a></li>
+      <li>/</li>
+      <li><a href="/productos" class="hover:text-blanco transition">Productos</a></li>
+      <li>/</li>
+      <li class="text-blanco">{categoria.nombre}</li>
+    </ol>
+  </nav>
+
+  <!-- Cabecera de Categoría -->
+  <section class="py-8 text-center mb-8">
+    <h1 class="text-4xl font-bold mb-4">{categoria.nombre}</h1>
+    {categoria.descripcion && (
+      <p class="text-gris text-lg max-w-2xl mx-auto">{categoria.descripcion}</p>
+    )}
+  </section>
+
+  <!-- Buscador -->
+  <section class="mb-8">
+    <div class="max-w-2xl mx-auto">
+      <input
+        type="text"
+        id="buscador"
+        placeholder={textos?.buscarPlaceholder || 'Buscar productos...'}
+        class="w-full px-4 py-3 bg-panel border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
+      />
+    </div>
+  </section>
+
+  <!-- Ordenación -->
+  <section class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <p class="text-gris text-sm">
+      <span id="contador-resultados">{totalProductos}</span> productos encontrados
+    </p>
+    
+    <div class="flex items-center gap-2">
+      <span class="text-gris text-sm">{textos?.ordenarPor || 'Ordenar por'}:</span>
+      <select
+        id="ordenar"
+        class="bg-panel border border-borde rounded-xl px-3 py-2 text-sm text-blanco focus:outline-none focus:border-acento appearance-none cursor-pointer min-w-[160px]"
+      >
+        <option value="recientes">{textos?.ordenarRecientes || 'Más recientes'}</option>
+        <option value="precio-asc">{textos?.ordenarPrecioMenor || 'Precio: menor a mayor'}</option>
+        <option value="precio-desc">{textos?.ordenarPrecioMayor || 'Precio: mayor a menor'}</option>
+        <option value="nombre-asc">{textos?.ordenarNombreAZ || 'Nombre: A-Z'}</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Grid Productos -->
+  {productos.length === 0 ? (
+    <div class="text-center py-20">
+      <p class="text-gris text-lg">{textos?.noResultados || 'No hay productos en esta categoría.'}</p>
+      <a href="/productos" class="inline-block mt-4 text-acento hover:underline">Ver todos los productos</a>
+    </div>
+  ) : (
+    <section id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      {productos.map((producto) => (
+        <div
+          class="producto-card group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition"
+          data-nombre={producto.nombre.toLowerCase()}
+          data-precio={producto.precio}
+          data-fecha={producto.createdAt}
+        >
+          <a href={`/productos/${producto.slug}`} class="block">
+            <div class="aspect-square bg-fondo p-4 relative">
+              {producto.imagen?.url && (
+                <img
+                  src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+                  alt={producto.nombre}
+                  class="w-full h-full object-contain"
+                  loading="lazy"
+                />
+              )}
+              {!producto.enStock && (
+                <span class="absolute top-4 left-4 px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-lg">
+                  Agotado
+                </span>
+              )}
+              <button
+                class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
+                aria-label={textos?.anadirFavoritos || 'Añadir a favoritos'}
+                onclick="event.preventDefault(); event.stopPropagation();"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </button>
+            </div>
+            <div class="p-4">
+              <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
+              <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
+              <p class="text-gris text-sm mt-1 line-clamp-2">{producto.descripcionCorta}</p>
+            </div>
+          </a>
+          <div class="px-4 pb-4 flex items-center justify-between">
+            <span class="text-lg font-bold text-acento">
+              {textos?.simboloMoneda || '€'}{producto.precio.toLocaleString()}
+            </span>
+            <button
+              class="boton-carrito p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition"
+              data-id={producto.id}
+              data-nombre={producto.nombre}
+              data-precio={producto.precio}
+              data-imagen={producto.imagen?.url ? `${STRAPI_URL_BASE}${producto.imagen.url}` : ''}
+              data-slug={producto.slug}
+              aria-label={textos?.anadirAlCarrito || 'Añadir al carrito'}
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ))}
+    </section>
+  )}
+
+  <!-- Mensaje Sin Resultados (para búsqueda) -->
+  <div id="sin-resultados" class="hidden text-center py-12">
+    <p class="text-gris">{textos?.noResultados || 'No se encontraron productos.'}</p>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    import { anadirAlCarrito } from '../../lib/carrito.js';
+
+    // Elementos del DOM
+    const buscador = document.getElementById('buscador') as HTMLInputElement;
+    const selectOrdenar = document.getElementById('ordenar') as HTMLSelectElement;
+    const gridProductos = document.getElementById('grid-productos') as HTMLElement;
+    const contadorResultados = document.getElementById('contador-resultados') as HTMLElement;
+    const sinResultados = document.getElementById('sin-resultados') as HTMLElement;
+
+    // Función para normalizar texto
+    function normalizarTexto(texto: string): string {
+      return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    // Función para filtrar y ordenar
+    function filtrarYOrdenar(): void {
+      if (!gridProductos) return;
+      
+      const termino = normalizarTexto(buscador?.value || '');
+      const orden = selectOrdenar?.value || 'recientes';
+      const tarjetas = Array.from(gridProductos.querySelectorAll('.producto-card')) as HTMLElement[];
+
+      // Crear regex
+      let regex: RegExp;
+      try {
+        regex = new RegExp(termino, 'i');
+      } catch {
+        regex = new RegExp(termino.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      }
+
+      // Filtrar
+      let visibles = 0;
+      tarjetas.forEach((tarjeta) => {
+        const nombre = tarjeta.dataset.nombre || '';
+        const coincide = regex.test(normalizarTexto(nombre));
+
+        if (coincide) {
+          tarjeta.classList.remove('hidden');
+          visibles++;
+        } else {
+          tarjeta.classList.add('hidden');
+        }
+      });
+
+      // Ordenar
+      const tarjetasVisibles = tarjetas.filter((t) => !t.classList.contains('hidden'));
+      tarjetasVisibles.sort((a, b) => {
+        const precioA = parseFloat(a.dataset.precio || '0');
+        const precioB = parseFloat(b.dataset.precio || '0');
+        const nombreA = a.dataset.nombre || '';
+        const nombreB = b.dataset.nombre || '';
+        const fechaA = new Date(a.dataset.fecha || '').getTime();
+        const fechaB = new Date(b.dataset.fecha || '').getTime();
+
+        switch (orden) {
+          case 'precio-asc': return precioA - precioB;
+          case 'precio-desc': return precioB - precioA;
+          case 'nombre-asc': return nombreA.localeCompare(nombreB);
+          default: return fechaB - fechaA;
+        }
+      });
+
+      tarjetasVisibles.forEach((tarjeta) => gridProductos.appendChild(tarjeta));
+
+      // Actualizar contador
+      if (contadorResultados) {
+        contadorResultados.textContent = visibles.toString();
+      }
+
+      // Mensaje sin resultados
+      if (sinResultados) {
+        if (visibles === 0 && termino) {
+          sinResultados.classList.remove('hidden');
+        } else {
+          sinResultados.classList.add('hidden');
+        }
+      }
+    }
+
+    // Event listeners
+    buscador?.addEventListener('input', filtrarYOrdenar);
+    selectOrdenar?.addEventListener('change', filtrarYOrdenar);
+
+    // Carrito
+    document.querySelectorAll('.boton-carrito').forEach(boton => {
+      boton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const btn = e.currentTarget as HTMLElement;
+        const producto = {
+          id: parseInt(btn.dataset.id || '0'),
+          nombre: btn.dataset.nombre || '',
+          precio: parseFloat(btn.dataset.precio || '0'),
+          imagen: btn.dataset.imagen || '',
+          slug: btn.dataset.slug || ''
+        };
+        
+        anadirAlCarrito(producto);
+        
+        if ((window as any).mostrarToast) {
+          (window as any).mostrarToast('Producto añadido al carrito');
+        }
+      });
+    });
+  </script>
+</Layout>

@@ -1,0 +1,251 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { obtenerDeStrapi, STRAPI_URL_BASE } from "../../lib/strapi";
+
+// Tipos
+interface Articulo {
+  id: number;
+  titulo: string;
+  slug: string;
+  extracto: string;
+  autor: string;
+  fechaPublicacion: string;
+  contenido: any[];
+  imagen: { url: string };
+  createdAt: string;
+}
+
+interface TextosGenerale {
+  tiempoLectura: string;
+  compartir: string;
+  articulosRelacionados: string;
+  verMas: string;
+}
+
+// Generar rutas estáticas
+export async function getStaticPaths() {
+  const res = await obtenerDeStrapi<Articulo[]>('articulos', 'populate=*');
+  const articulos = res.data;
+
+  return articulos.map((articulo) => ({
+    params: { slug: articulo.slug },
+    props: { articulo }
+  }));
+}
+
+const { articulo } = Astro.props;
+
+// Obtener textos y artículos relacionados
+let textos: TextosGenerale | null = null;
+let articulosRelacionados: Articulo[] = [];
+
+try {
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+
+  const resRelacionados = await obtenerDeStrapi<Articulo[]>(
+    'articulos',
+    `populate=*&filters[id][$ne]=${articulo.id}&pagination[limit]=3&sort=fechaPublicacion:desc`
+  );
+  articulosRelacionados = resRelacionados.data;
+} catch (e) {
+  console.error('Error:', e);
+}
+
+// Calcular tiempo de lectura
+function calcularTiempoLectura(contenido: any[]): number {
+  if (!contenido || !Array.isArray(contenido)) return 1;
+  
+  const texto = contenido.map(bloque => {
+    if (bloque.children) {
+      return bloque.children.map((child: any) => child.text || '').join(' ');
+    }
+    return '';
+  }).join(' ');
+  
+  const palabras = texto.split(/\s+/).filter(Boolean).length;
+  const minutos = Math.ceil(palabras / 200);
+  return minutos < 1 ? 1 : minutos;
+}
+
+// Formatear fecha
+function formatearFecha(fecha: string): string {
+  if (!fecha) return '';
+  return new Date(fecha).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+// Renderizar bloques de Strapi
+function renderizarBloques(bloques: any[]): string {
+  if (!bloques || !Array.isArray(bloques)) return '';
+  
+  return bloques.map(bloque => {
+    if (bloque.type === 'paragraph') {
+      const texto = bloque.children?.map((child: any) => {
+        let contenido = child.text || '';
+        if (child.bold) contenido = `<strong>${contenido}</strong>`;
+        if (child.italic) contenido = `<em>${contenido}</em>`;
+        if (child.underline) contenido = `<u>${contenido}</u>`;
+        if (child.code) contenido = `<code class="bg-panel px-1 rounded">${contenido}</code>`;
+        return contenido;
+      }).join('') || '';
+      return `<p class="mb-4 leading-relaxed">${texto}</p>`;
+    }
+    if (bloque.type === 'heading') {
+      const nivel = bloque.level || 2;
+      const texto = bloque.children?.map((child: any) => child.text).join('') || '';
+      const clases = nivel === 2 
+        ? 'text-2xl font-bold mb-4 mt-8' 
+        : nivel === 3 
+          ? 'text-xl font-semibold mb-3 mt-6'
+          : 'text-lg font-medium mb-2 mt-4';
+      return `<h${nivel} class="${clases}">${texto}</h${nivel}>`;
+    }
+    if (bloque.type === 'list') {
+      const tipo = bloque.format === 'ordered' ? 'ol' : 'ul';
+      const clasesTipo = tipo === 'ol' ? 'list-decimal' : 'list-disc';
+      const items = bloque.children?.map((item: any) => {
+        const texto = item.children?.map((child: any) => child.text).join('') || '';
+        return `<li class="mb-1">${texto}</li>`;
+      }).join('') || '';
+      return `<${tipo} class="${clasesTipo} pl-6 mb-4 space-y-1 text-gris">${items}</${tipo}>`;
+    }
+    if (bloque.type === 'quote') {
+      const texto = bloque.children?.map((child: any) => child.text).join('') || '';
+      return `<blockquote class="border-l-4 border-acento pl-4 my-6 italic text-gris">${texto}</blockquote>`;
+    }
+    if (bloque.type === 'code') {
+      const texto = bloque.children?.map((child: any) => child.text).join('') || '';
+      return `<pre class="bg-panel p-4 rounded-xl overflow-x-auto mb-4"><code class="text-sm">${texto}</code></pre>`;
+    }
+    return '';
+  }).join('');
+}
+
+const tiempoLectura = calcularTiempoLectura(articulo.contenido);
+const metaTitulo = `${articulo.titulo} | GaleríaTech Blog`;
+const metaDescripcion = articulo.extracto;
+---
+
+<Layout titulo={metaTitulo} descripcion={metaDescripcion}>
+  
+  <!-- Breadcrumb -->
+  <nav class="mb-6 text-sm">
+    <ol class="flex items-center gap-2 text-gris">
+      <li><a href="/" class="hover:text-blanco transition">Inicio</a></li>
+      <li>/</li>
+      <li><a href="/blog" class="hover:text-blanco transition">Blog</a></li>
+      <li>/</li>
+      <li class="text-blanco line-clamp-1">{articulo.titulo}</li>
+    </ol>
+  </nav>
+
+  <article class="max-w-3xl mx-auto">
+    
+    <!-- Cabecera del Artículo -->
+    <header class="mb-8">
+      <!-- Meta -->
+      <div class="flex flex-wrap items-center gap-3 text-sm text-gris mb-4">
+        <span>{formatearFecha(articulo.fechaPublicacion || articulo.createdAt)}</span>
+        <span>•</span>
+        <span>{tiempoLectura} min {textos?.tiempoLectura || 'de lectura'}</span>
+      </div>
+      
+      <!-- Título -->
+      <h1 class="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+        {articulo.titulo}
+      </h1>
+      
+      <!-- Extracto -->
+      <p class="text-lg text-gris mb-6">
+        {articulo.extracto}
+      </p>
+      
+      <!-- Autor y Compartir -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-acento/20 flex items-center justify-center">
+            <span class="text-acento font-medium">
+              {articulo.autor.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <p class="font-medium text-blanco">{articulo.autor}</p>
+            <p class="text-xs text-gris">Autor</p>
+          </div>
+        </div>
+        
+        <button
+          class="p-2 rounded-xl border border-borde hover:border-acento/50 hover:bg-panel transition"
+          aria-label={textos?.compartir || 'Compartir'}
+          onclick="navigator.share ? navigator.share({title: document.title, url: window.location.href}) : navigator.clipboard.writeText(window.location.href)"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Imagen Principal -->
+    {articulo.imagen?.url && (
+      <div class="aspect-video rounded-2xl overflow-hidden mb-8">
+        <img
+          src={`${STRAPI_URL_BASE}${articulo.imagen.url}`}
+          alt={articulo.titulo}
+          class="w-full h-full object-cover"
+        />
+      </div>
+    )}
+
+    <!-- Contenido -->
+    <div class="prose prose-invert max-w-none text-gris">
+      <Fragment set:html={renderizarBloques(articulo.contenido)} />
+    </div>
+
+  </article>
+
+  <!-- Artículos Relacionados -->
+  {articulosRelacionados.length > 0 && (
+    <section class="mt-16 pt-12 border-t border-borde">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-bold">{textos?.articulosRelacionados || 'Artículos relacionados'}</h2>
+        <a href="/blog" class="text-acento text-sm hover:underline">
+          {textos?.verMas || 'Ver más'} →
+        </a>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {articulosRelacionados.map((art) => (
+          <article class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+            <a href={`/blog/${art.slug}`} class="block">
+              <div class="aspect-video bg-fondo relative overflow-hidden">
+                {art.imagen?.url && (
+                  <img
+                    src={`${STRAPI_URL_BASE}${art.imagen.url}`}
+                    alt={art.titulo}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              <div class="p-4">
+                <div class="flex items-center gap-2 text-xs text-gris mb-2">
+                  <span>{formatearFecha(art.fechaPublicacion || art.createdAt)}</span>
+                  <span>•</span>
+                  <span>{calcularTiempoLectura(art.contenido)} min</span>
+                </div>
+                <h3 class="font-semibold text-blanco group-hover:text-acento transition line-clamp-2">
+                  {art.titulo}
+                </h3>
+              </div>
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+  )}
+</Layout>

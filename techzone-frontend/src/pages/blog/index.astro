@@ -1,0 +1,213 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { obtenerDeStrapi, STRAPI_URL_BASE } from "../../lib/strapi";
+
+// Tipos
+interface Articulo {
+  id: number;
+  titulo: string;
+  slug: string;
+  extracto: string;
+  autor: string;
+  fechaPublicacion: string;
+  contenido: any[];
+  imagen: { url: string };
+  createdAt: string;
+}
+
+interface TextosGenerale {
+  tiempoLectura: string;
+  verMas: string;
+  noResultados: string;
+  buscarPlaceholder: string;
+}
+
+// Obtener datos
+let articulos: Articulo[] = [];
+let textos: TextosGenerale | null = null;
+let error = false;
+
+try {
+  const resArticulos = await obtenerDeStrapi<Articulo[]>('articulos', 'populate=*&sort=fechaPublicacion:desc');
+  articulos = resArticulos.data;
+
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+} catch (e) {
+  console.error('Error:', e);
+  error = true;
+}
+
+// Función para calcular tiempo de lectura
+function calcularTiempoLectura(contenido: any[]): number {
+  if (!contenido || !Array.isArray(contenido)) return 1;
+  
+  const texto = contenido.map(bloque => {
+    if (bloque.children) {
+      return bloque.children.map((child: any) => child.text || '').join(' ');
+    }
+    return '';
+  }).join(' ');
+  
+  const palabras = texto.split(/\s+/).filter(Boolean).length;
+  const minutos = Math.ceil(palabras / 200); // 200 palabras por minuto
+  return minutos < 1 ? 1 : minutos;
+}
+
+// Formatear fecha
+function formatearFecha(fecha: string): string {
+  if (!fecha) return '';
+  return new Date(fecha).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+const metaTitulo = "Blog | GaleríaTech";
+const metaDescripcion = "Artículos sobre tecnología, novedades y guías de productos tech.";
+---
+
+<Layout titulo={metaTitulo} descripcion={metaDescripcion}>
+  
+  <!-- Cabecera -->
+  <section class="py-8 text-center mb-8">
+    <h1 class="text-4xl font-bold mb-4">Blog</h1>
+    <p class="text-gris text-lg max-w-2xl mx-auto">
+      Descubre las últimas novedades, guías y artículos sobre tecnología.
+    </p>
+  </section>
+
+  <!-- Buscador -->
+  <section class="mb-8">
+    <div class="max-w-2xl mx-auto">
+      <input
+        type="text"
+        id="buscador"
+        placeholder={textos?.buscarPlaceholder || 'Buscar artículos...'}
+        class="w-full px-4 py-3 bg-panel border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
+      />
+    </div>
+  </section>
+
+  {error ? (
+    <div class="text-center py-20 text-error">
+      <p>Error al cargar los artículos.</p>
+    </div>
+  ) : articulos.length === 0 ? (
+    <div class="text-center py-20">
+      <p class="text-gris text-lg">No hay artículos publicados todavía.</p>
+    </div>
+  ) : (
+    <>
+      <!-- Grid de Artículos -->
+      <section id="grid-articulos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {articulos.map((articulo) => (
+          <article
+            class="articulo-card group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition"
+            data-titulo={articulo.titulo.toLowerCase()}
+            data-extracto={articulo.extracto.toLowerCase()}
+          >
+            <a href={`/blog/${articulo.slug}`} class="block">
+              <!-- Imagen -->
+              <div class="aspect-video bg-fondo relative overflow-hidden">
+                {articulo.imagen?.url && (
+                  <img
+                    src={`${STRAPI_URL_BASE}${articulo.imagen.url}`}
+                    alt={articulo.titulo}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              
+              <!-- Contenido -->
+              <div class="p-5">
+                <!-- Meta -->
+                <div class="flex items-center gap-3 text-xs text-gris mb-3">
+                  <span>{formatearFecha(articulo.fechaPublicacion || articulo.createdAt)}</span>
+                  <span>•</span>
+                  <span>{calcularTiempoLectura(articulo.contenido)} min {textos?.tiempoLectura || 'de lectura'}</span>
+                </div>
+                
+                <!-- Título -->
+                <h2 class="text-lg font-semibold text-blanco group-hover:text-acento transition mb-2">
+                  {articulo.titulo}
+                </h2>
+                
+                <!-- Extracto -->
+                <p class="text-gris text-sm line-clamp-3 mb-4">
+                  {articulo.extracto}
+                </p>
+                
+                <!-- Autor -->
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full bg-acento/20 flex items-center justify-center">
+                    <span class="text-acento text-sm font-medium">
+                      {articulo.autor.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span class="text-sm text-gris">{articulo.autor}</span>
+                </div>
+              </div>
+            </a>
+          </article>
+        ))}
+      </section>
+
+      <!-- Mensaje Sin Resultados -->
+      <div id="sin-resultados" class="hidden text-center py-12">
+        <p class="text-gris">{textos?.noResultados || 'No se encontraron artículos.'}</p>
+      </div>
+    </>
+  )}
+
+  <!-- Script de búsqueda -->
+  <script>
+    const buscador = document.getElementById('buscador') as HTMLInputElement;
+    const gridArticulos = document.getElementById('grid-articulos') as HTMLElement;
+    const sinResultados = document.getElementById('sin-resultados') as HTMLElement;
+
+    function normalizarTexto(texto: string): string {
+      return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function filtrarArticulos(): void {
+      if (!gridArticulos) return;
+      
+      const termino = normalizarTexto(buscador?.value || '');
+      const tarjetas = Array.from(gridArticulos.querySelectorAll('.articulo-card')) as HTMLElement[];
+
+      let regex: RegExp;
+      try {
+        regex = new RegExp(termino, 'i');
+      } catch {
+        regex = new RegExp(termino.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      }
+
+      let visibles = 0;
+      tarjetas.forEach((tarjeta) => {
+        const titulo = tarjeta.dataset.titulo || '';
+        const extracto = tarjeta.dataset.extracto || '';
+        const coincide = regex.test(normalizarTexto(titulo)) || regex.test(normalizarTexto(extracto));
+
+        if (coincide) {
+          tarjeta.classList.remove('hidden');
+          visibles++;
+        } else {
+          tarjeta.classList.add('hidden');
+        }
+      });
+
+      if (sinResultados) {
+        if (visibles === 0 && termino) {
+          sinResultados.classList.remove('hidden');
+        } else {
+          sinResultados.classList.add('hidden');
+        }
+      }
+    }
+
+    buscador?.addEventListener('input', filtrarArticulos);
+  </script>
+</Layout>
