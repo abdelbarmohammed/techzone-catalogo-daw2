@@ -45,6 +45,10 @@
     },
     "fechaPublicacion": {
       "type": "date"
+    },
+    "destacado": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

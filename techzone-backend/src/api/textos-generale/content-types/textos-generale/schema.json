@@ -116,6 +116,77 @@
     },
     "todasCategorias": {
       "type": "string"
+    },
+    "contactoTitulo": {
+      "type": "string",
+      "default": "Contáctanos"
+    },
+    "contactoSubtitulo": {
+      "type": "string",
+      "default": "¿Tienes alguna pregunta? Estamos aquí para ayudarte."
+    },
+    "nombreLabel": {
+      "type": "string",
+      "default": "nombreLabel"
+    },
+    "emailLabel": {
+      "type": "string",
+      "default": "Email"
+    },
+    "telefonoLabel": {
+      "type": "string",
+      "default": "Teléfono"
+    },
+    "asuntoLabel": {
+      "type": "string",
+      "default": "Asunto"
+    },
+    "mensajeLabel": {
+      "type": "string",
+      "default": "Mensaje"
+    },
+    "mensajeEnviado": {
+      "type": "string",
+      "default": "¡Mensaje enviado correctamente!"
+    },
+    "errorFormulario": {
+      "type": "string",
+      "default": "Por favor, corrige los errores del formulario"
+    },
+    "campoRequerido": {
+      "type": "string",
+      "default": "Este campo es requerido"
+    },
+    "emailInvalido": {
+      "type": "string",
+      "default": "El email no es válido"
+    },
+    "telefonoInvalido": {
+      "type": "string",
+      "default": "El teléfono no es válido"
+    },
+    "nombrePlaceholder": {
+      "type": "string",
+      "default": "Tu nombre completo"
+    },
+    "emailPlaceholder": {
+      "type": "string",
+      "default": "tu@email.com"
+    },
+    "telefonoPlaceholder": {
+      "type": "string",
+      "default": "+34 600 000 000"
+    },
+    "asuntoPlaceholder": {
+      "type": "string",
+      "default": "¿En qué podemos ayudarte?"
+    },
+    "mensajePlaceholder": {
+      "type": "string",
+      "default": "Escribe tu mensaje aquí..."
+    },
+    "favoritoAnadido": {
+      "type": "string"
     }
   }
 }

@@ -43,6 +43,15 @@
     },
     "seguirComprando": {
       "type": "string"
+    },
+    "pedidoExito": {
+      "type": "string"
+    },
+    "pedidoExitoMensaje": {
+      "type": "string"
+    },
+    "volverInicio": {
+      "type": "string"
     }
   }
 }

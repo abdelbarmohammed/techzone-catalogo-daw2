@@ -27,9 +27,32 @@
       "type": "string",
       "required": true
     },
+    "heroBotonPrimarioEnlace": {
+      "type": "string",
+      "default": "/productos"
+    },
     "heroBotonSecundario": {
       "type": "string",
       "required": true
+    },
+    "heroBotonSecundarioEnlace": {
+      "type": "string",
+      "default": "#categorias"
+    },
+    "heroImagen": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "estadisticas": {
+      "type": "component",
+      "repeatable": true,
+      "component": "inicio.estadistica"
+    },
+    "beneficios": {
+      "type": "component",
+      "repeatable": true,
+      "component": "inicio.beneficio"
     },
     "categoriasSeccionTitulo": {
       "type": "string",
@@ -41,6 +64,41 @@
     "productosSeccionTitulo": {
       "type": "string",
       "required": true
+    },
+    "productosSeccionSubtitulo": {
+      "type": "string"
+    },
+    "bannerEtiqueta": {
+      "type": "string"
+    },
+    "bannerTitulo": {
+      "type": "string"
+    },
+    "bannerSubtitulo": {
+      "type": "text"
+    },
+    "bannerBoton": {
+      "type": "string"
+    },
+    "bannerEnlace": {
+      "type": "string"
+    },
+    "bannerImagen": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "marcasSeccionTitulo": {
+      "type": "string"
+    },
+    "marcasSeccionSubtitulo": {
+      "type": "string"
+    },
+    "blogSeccionTitulo": {
+      "type": "string"
+    },
+    "blogSeccionSubtitulo": {
+      "type": "string"
     },
     "newsletterTitulo": {
       "type": "string",
@@ -54,6 +112,9 @@
       "required": true
     },
     "newsletterPlaceholder": {
+      "type": "string"
+    },
+    "newsletterNota": {
       "type": "string"
     },
     "metaTitulo": {

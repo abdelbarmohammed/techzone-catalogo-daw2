@@ -18,7 +18,7 @@ interface Producto {
   id: number;
   nombre: string;
   slug: string;
-  descripcion: any[]; // Strapi blocks
+  descripcion: any[];
   descripcionCorta: string;
   precio: number;
   marca: string;
@@ -39,9 +39,22 @@ interface TextosGenerale {
   compartir: string;
   productosRelacionados: string;
   verMas: string;
+  envioGratis: string;
+  garantia: string;
+  devolucion: string;
 }
 
-// Generar rutas estáticas para todos los productos
+interface Beneficio {
+  icono: string;
+  titulo: string;
+  descripcion: string;
+}
+
+interface PaginaInicio {
+  beneficios: Beneficio[];
+}
+
+// Generar rutas estáticas
 export async function getStaticPaths() {
   const res = await obtenerDeStrapi<Producto[]>('productos', 'populate=*');
   const productos = res.data;
@@ -52,18 +65,21 @@ export async function getStaticPaths() {
   }));
 }
 
-// Obtener props del producto actual
 const { producto } = Astro.props;
 
-// Obtener textos generales
+// Obtener textos y productos relacionados
 let textos: TextosGenerale | null = null;
 let productosRelacionados: Producto[] = [];
+let beneficios: Beneficio[] = [];
 
 try {
   const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
   textos = resTextos.data;
 
-  // Obtener productos relacionados (misma categoría, excluyendo el actual)
+  // Obtener beneficios de página inicio
+  const resPagina = await obtenerDeStrapi<PaginaInicio>('pagina-inicio', 'populate=*');
+  beneficios = resPagina.data?.beneficios?.slice(0, 3) || [];
+
   if (producto.categoria?.id) {
     const resRelacionados = await obtenerDeStrapi<Producto[]>(
       'productos',
@@ -75,7 +91,7 @@ try {
   console.error('Error:', e);
 }
 
-// Función para renderizar bloques de Strapi
+// Renderizar bloques de Strapi
 function renderizarBloques(bloques: any[]): string {
   if (!bloques || !Array.isArray(bloques)) return '';
   
@@ -88,12 +104,12 @@ function renderizarBloques(bloques: any[]): string {
         if (child.underline) contenido = `<u>${contenido}</u>`;
         return contenido;
       }).join('') || '';
-      return `<p class="mb-4">${texto}</p>`;
+      return `<p class="mb-4 leading-relaxed">${texto}</p>`;
     }
     if (bloque.type === 'heading') {
       const nivel = bloque.level || 2;
       const texto = bloque.children?.map((child: any) => child.text).join('') || '';
-      const clases = nivel === 2 ? 'text-xl font-bold mb-3 mt-6' : 'text-lg font-semibold mb-2 mt-4';
+      const clases = nivel === 2 ? 'text-xl font-bold mb-3 mt-6 text-blanco' : 'text-lg font-semibold mb-2 mt-4 text-blanco';
       return `<h${nivel} class="${clases}">${texto}</h${nivel}>`;
     }
     if (bloque.type === 'list') {
@@ -109,7 +125,16 @@ function renderizarBloques(bloques: any[]): string {
   }).join('');
 }
 
-// Combinar imagen principal con galería
+// Iconos para beneficios
+const iconosSVG: Record<string, string> = {
+  truck: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>`,
+  shield: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>`,
+  refresh: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>`,
+  headphones: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>`,
+  star: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>`,
+  clock: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
+};
+
 const todasLasImagenes = [
   producto.imagen,
   ...(producto.imagenes || [])
@@ -121,44 +146,51 @@ const metaDescripcion = producto.descripcionCorta;
 
 <Layout titulo={metaTitulo} descripcion={metaDescripcion}>
   
+  <!-- Background Gradient -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-acento/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-1/3 left-0 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-3xl"></div>
+  </div>
+
   <!-- Breadcrumb -->
-  <nav class="mb-6 text-sm">
-    <ol class="flex items-center gap-2 text-gris">
-      <li><a href="/" class="hover:text-blanco transition">Inicio</a></li>
-      <li>/</li>
-      <li><a href="/productos" class="hover:text-blanco transition">Productos</a></li>
+  <nav class="mb-8 text-sm animate-fade-in">
+    <ol class="flex items-center gap-2 text-gris flex-wrap">
+      <li><a href="/" class="hover:text-acento transition">Inicio</a></li>
+      <li class="text-borde">/</li>
+      <li><a href="/productos" class="hover:text-acento transition">Productos</a></li>
       {producto.categoria && (
         <>
-          <li>/</li>
-          <li><a href={`/categorias/${producto.categoria.slug}`} class="hover:text-blanco transition">{producto.categoria.nombre}</a></li>
+          <li class="text-borde">/</li>
+          <li><a href={`/categorias/${producto.categoria.slug}`} class="hover:text-acento transition">{producto.categoria.nombre}</a></li>
         </>
       )}
-      <li>/</li>
-      <li class="text-blanco">{producto.nombre}</li>
+      <li class="text-borde">/</li>
+      <li class="text-blanco font-medium">{producto.nombre}</li>
     </ol>
   </nav>
 
   <!-- Producto Principal -->
-  <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 mb-16">
     
     <!-- Galería de Imágenes -->
-    <div class="space-y-4">
+    <div class="space-y-4 animate-slide-up">
       <!-- Imagen Principal -->
-      <div class="aspect-square bg-panel rounded-2xl border border-borde p-6 flex items-center justify-center">
+      <div class="aspect-square bg-panel rounded-3xl border border-borde p-8 flex items-center justify-center relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-br from-acento/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <img
           id="imagen-principal"
           src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
           alt={producto.nombre}
-          class="max-w-full max-h-full object-contain"
+          class="max-w-full max-h-full object-contain relative z-10 transition-transform duration-500 group-hover:scale-105"
         />
       </div>
       
       <!-- Miniaturas -->
       {todasLasImagenes.length > 1 && (
-        <div class="flex gap-3 overflow-x-auto pb-2">
+        <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {todasLasImagenes.map((img, index) => (
             <button
-              class={`miniatura flex-shrink-0 w-20 h-20 rounded-xl border p-2 transition ${index === 0 ? 'border-acento bg-acento/10' : 'border-borde hover:border-acento/50'}`}
+              class={`miniatura flex-shrink-0 w-20 h-20 rounded-xl border-2 p-2 transition-all duration-300 hover:scale-105 ${index === 0 ? 'border-acento bg-acento/10 shadow-lg shadow-acento/20' : 'border-borde hover:border-acento/50 bg-panel'}`}
               data-imagen={`${STRAPI_URL_BASE}${img.url}`}
             >
               <img
@@ -173,14 +205,14 @@ const metaDescripcion = producto.descripcionCorta;
     </div>
 
     <!-- Información del Producto -->
-    <div class="space-y-6">
+    <div class="space-y-6 animate-slide-up" style="animation-delay: 0.1s;">
       <!-- Marca y Categoría -->
       <div class="flex items-center gap-3">
-        <span class="text-sm text-acento uppercase tracking-wide font-medium">{producto.marca}</span>
+        <span class="text-sm text-acento uppercase tracking-widest font-semibold">{producto.marca}</span>
         {producto.categoria && (
           <>
-            <span class="text-gris">•</span>
-            <a href={`/categorias/${producto.categoria.slug}`} class="text-sm text-gris hover:text-blanco transition">
+            <span class="w-1.5 h-1.5 rounded-full bg-borde"></span>
+            <a href={`/categorias/${producto.categoria.slug}`} class="text-sm text-gris hover:text-acento transition">
               {producto.categoria.nombre}
             </a>
           </>
@@ -188,26 +220,26 @@ const metaDescripcion = producto.descripcionCorta;
       </div>
 
       <!-- Nombre -->
-      <h1 class="text-3xl lg:text-4xl font-bold">{producto.nombre}</h1>
+      <h1 class="text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight">{producto.nombre}</h1>
 
       <!-- Descripción Corta -->
-      <p class="text-gris text-lg">{producto.descripcionCorta}</p>
+      <p class="text-gris text-lg leading-relaxed">{producto.descripcionCorta}</p>
 
       <!-- Precio y Stock -->
-      <div class="flex items-center gap-4">
-        <span class="text-3xl font-bold text-acento">
+      <div class="flex items-center gap-4 flex-wrap">
+        <span class="text-4xl font-bold text-acento">
           {textos?.simboloMoneda || '€'}{producto.precio.toLocaleString()}
         </span>
-        <span class={`px-3 py-1 rounded-full text-sm font-medium ${producto.enStock ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+        <span class={`px-4 py-1.5 rounded-full text-sm font-semibold ${producto.enStock ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 'bg-red-500/15 text-red-400 border border-red-500/30'}`}>
           {producto.enStock ? (textos?.enStock || 'En stock') : (textos?.agotado || 'Agotado')}
         </span>
       </div>
 
       <!-- Botones de Acción -->
-      <div class="flex flex-col sm:flex-row gap-3">
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
         <button
           id="boton-carrito-principal"
-          class={`flex-1 py-4 px-6 rounded-xl font-semibold flex items-center justify-center gap-2 transition ${producto.enStock ? 'bg-acento text-fondo hover:opacity-90' : 'bg-gris/20 text-gris cursor-not-allowed'}`}
+          class={`btn-primary flex-1 py-4 px-6 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all duration-300 ${producto.enStock ? 'bg-acento text-fondo hover:shadow-lg hover:shadow-acento/30' : 'bg-gris/20 text-gris cursor-not-allowed'}`}
           data-id={producto.id}
           data-nombre={producto.nombre}
           data-precio={producto.precio}
@@ -222,28 +254,42 @@ const metaDescripcion = producto.descripcionCorta;
         </button>
         
         <button
-          class="p-4 rounded-xl border border-borde hover:border-acento/50 hover:bg-panel transition"
+          class="p-4 rounded-xl border border-borde hover:border-acento hover:bg-acento/10 hover:text-acento transition-all duration-300 group"
           aria-label={textos?.anadirFavoritos || 'Añadir a favoritos'}
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>
         
         <button
-          class="p-4 rounded-xl border border-borde hover:border-acento/50 hover:bg-panel transition"
+          class="p-4 rounded-xl border border-borde hover:border-acento hover:bg-acento/10 hover:text-acento transition-all duration-300 group"
           aria-label={textos?.compartir || 'Compartir'}
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
         </button>
       </div>
 
+      <!-- Feature Badges -->
+      {beneficios.length > 0 && (
+        <div class="flex flex-wrap gap-4 pt-4 border-t border-borde">
+          {beneficios.map((beneficio) => (
+            <div class="flex items-center gap-2 text-sm text-gris">
+              <span class="text-acento">
+                <Fragment set:html={iconosSVG[beneficio.icono] || iconosSVG.star} />
+              </span>
+              <span>{beneficio.titulo}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <!-- Descripción Completa -->
       <div class="pt-6 border-t border-borde">
         <h2 class="text-xl font-bold mb-4">Descripción</h2>
-        <div class="prose prose-invert prose-sm max-w-none text-gris">
+        <div class="prose prose-invert prose-sm max-w-none text-gris leading-relaxed">
           <Fragment set:html={renderizarBloques(producto.descripcion)} />
         </div>
       </div>
@@ -252,37 +298,51 @@ const metaDescripcion = producto.descripcionCorta;
 
   <!-- Productos Relacionados -->
   {productosRelacionados.length > 0 && (
-    <section class="py-12 border-t border-borde">
+    <section class="py-12 border-t border-borde animate-fade-in">
       <div class="flex justify-between items-center mb-8">
         <h2 class="text-2xl font-bold">{textos?.productosRelacionados || 'Productos relacionados'}</h2>
-        <a href={`/categorias/${producto.categoria?.slug}`} class="text-acento text-sm hover:underline">
-          {textos?.verMas || 'Ver más'} →
+        <a href={`/categorias/${producto.categoria?.slug}`} class="text-acento text-sm hover:underline flex items-center gap-1 group">
+          {textos?.verMas || 'Ver más'} 
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
         </a>
       </div>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {productosRelacionados.map((prod) => (
-          <div class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+        {productosRelacionados.map((prod, index) => (
+          <div 
+            class="card-hover group bg-panel rounded-2xl border border-borde overflow-hidden"
+            style={`animation-delay: ${index * 0.1}s;`}
+          >
             <a href={`/productos/${prod.slug}`} class="block">
-              <div class="aspect-square bg-fondo p-4">
+              <div class="aspect-square bg-fondo p-6 relative overflow-hidden">
                 {prod.imagen?.url && (
                   <img
                     src={`${STRAPI_URL_BASE}${prod.imagen.url}`}
                     alt={prod.nombre}
-                    class="w-full h-full object-contain"
+                    class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
                 )}
+                <button
+                  class="absolute top-3 right-3 p-2 rounded-full bg-panel/80 opacity-0 group-hover:opacity-100 hover:bg-acento hover:text-fondo transition-all duration-300"
+                  onclick="event.preventDefault(); event.stopPropagation();"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
               </div>
               <div class="p-4">
                 <span class="text-xs text-acento uppercase tracking-wide">{prod.marca}</span>
-                <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{prod.nombre}</h3>
+                <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition line-clamp-1">{prod.nombre}</h3>
               </div>
             </a>
             <div class="px-4 pb-4 flex items-center justify-between">
               <span class="text-lg font-bold text-acento">{textos?.simboloMoneda || '€'}{prod.precio.toLocaleString()}</span>
               <button
-                class="boton-carrito-relacionado p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition"
+                class="boton-carrito-relacionado p-2.5 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition-all duration-300 hover:scale-105"
                 data-id={prod.id}
                 data-nombre={prod.nombre}
                 data-precio={prod.precio}
@@ -312,20 +372,28 @@ const metaDescripcion = producto.descripcionCorta;
       miniatura.addEventListener('click', () => {
         const nuevaImagen = (miniatura as HTMLElement).dataset.imagen;
         if (nuevaImagen && imagenPrincipal) {
-          imagenPrincipal.src = nuevaImagen;
+          imagenPrincipal.style.opacity = '0';
+          setTimeout(() => {
+            imagenPrincipal.src = nuevaImagen;
+            imagenPrincipal.style.opacity = '1';
+          }, 200);
           
-          // Actualizar estilos de miniaturas
           miniaturas.forEach(m => {
-            m.classList.remove('border-acento', 'bg-acento/10');
+            m.classList.remove('border-acento', 'bg-acento/10', 'shadow-lg', 'shadow-acento/20');
             m.classList.add('border-borde');
           });
           miniatura.classList.remove('border-borde');
-          miniatura.classList.add('border-acento', 'bg-acento/10');
+          miniatura.classList.add('border-acento', 'bg-acento/10', 'shadow-lg', 'shadow-acento/20');
         }
       });
     });
 
-    // Botón principal de añadir al carrito
+    // Transición suave para imagen
+    if (imagenPrincipal) {
+      imagenPrincipal.style.transition = 'opacity 0.2s ease';
+    }
+
+    // Botón principal
     const botonPrincipal = document.getElementById('boton-carrito-principal');
     if (botonPrincipal && !botonPrincipal.hasAttribute('disabled')) {
       botonPrincipal.addEventListener('click', () => {
@@ -339,13 +407,17 @@ const metaDescripcion = producto.descripcionCorta;
         
         anadirAlCarrito(producto);
         
+        // Animación de confirmación
+        botonPrincipal.classList.add('scale-95');
+        setTimeout(() => botonPrincipal.classList.remove('scale-95'), 150);
+        
         if ((window as any).mostrarToast) {
           (window as any).mostrarToast('Producto añadido al carrito');
         }
       });
     }
 
-    // Botones de productos relacionados
+    // Botones relacionados
     document.querySelectorAll('.boton-carrito-relacionado').forEach(boton => {
       boton.addEventListener('click', (e) => {
         e.preventDefault();

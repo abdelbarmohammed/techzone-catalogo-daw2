@@ -59,6 +59,18 @@
     },
     "twitter": {
       "type": "string"
+    },
+    "telefonoContacto": {
+      "type": "string",
+      "default": "+34 912 345 678"
+    },
+    "direccion": {
+      "type": "string",
+      "default": "Málaga, España"
+    },
+    "horario": {
+      "type": "string",
+      "default": "Lun - Vie: 9:00 - 18:00"
     }
   }
 }

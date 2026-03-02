@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_inicio_beneficios",
+  "info": {
+    "displayName": "Beneficio",
+    "icon": "check"
+  },
+  "options": {},
+  "attributes": {
+    "icono": {
+      "type": "enumeration",
+      "enum": ["truck", "shield", "refresh", "headphones", "star", "clock"],
+      "required": true
+    },
+    "titulo": {
+      "type": "string",
+      "required": true
+    },
+    "descripcion": {
+      "type": "string"
+    }
+  }
+}

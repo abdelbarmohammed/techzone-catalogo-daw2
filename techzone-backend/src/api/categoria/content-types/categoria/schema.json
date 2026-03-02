@@ -24,13 +24,13 @@
     },
     "imagen": {
       "type": "media",
-      "multiple": true,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "icono": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
     },
     "productos": {
       "type": "relation",

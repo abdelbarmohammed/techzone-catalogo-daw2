@@ -8,7 +8,7 @@ interface Categoria {
   nombre: string;
   slug: string;
   descripcion?: string;
-  imagen?: { url: string }[];
+  imagen?: { url: string };
 }
 
 interface Producto {
@@ -36,9 +36,13 @@ interface TextosGenerale {
   ordenarRecientes: string;
   mostrandoResultados: string;
   noResultados: string;
+  filtros: string;
+  rangoPrecio: string;
+  marcas: string;
+  limpiarFiltros: string;
 }
 
-// Generar rutas estáticas para todas las categorías
+// Generar rutas estáticas
 export async function getStaticPaths() {
   const resCategorias = await obtenerDeStrapi<Categoria[]>('categorias');
   const categorias = resCategorias.data;
@@ -49,10 +53,9 @@ export async function getStaticPaths() {
   }));
 }
 
-// Obtener props
 const { categoria } = Astro.props;
 
-// Obtener textos y productos de esta categoría
+// Obtener datos
 let textos: TextosGenerale | null = null;
 let productos: Producto[] = [];
 
@@ -69,6 +72,14 @@ try {
   console.error('Error:', e);
 }
 
+// Obtener marcas únicas
+const marcasUnicas = [...new Set(productos.map(p => p.marca))].sort();
+
+// Obtener rango de precios
+const precios = productos.map(p => p.precio);
+const precioMin = precios.length > 0 ? Math.floor(Math.min(...precios)) : 0;
+const precioMax = precios.length > 0 ? Math.ceil(Math.max(...precios)) : 1000;
+
 const totalProductos = productos.length;
 const metaTitulo = `${categoria.nombre} | GaleríaTech`;
 const metaDescripcion = categoria.descripcion || `Explora nuestra colección de ${categoria.nombre}`;
@@ -76,156 +87,303 @@ const metaDescripcion = categoria.descripcion || `Explora nuestra colección de 
 
 <Layout titulo={metaTitulo} descripcion={metaDescripcion}>
   
+  <!-- Background Gradient -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-acento/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-1/3 left-0 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-3xl"></div>
+  </div>
+
   <!-- Breadcrumb -->
-  <nav class="mb-6 text-sm">
+  <nav class="mb-8 text-sm animate-fade-in">
     <ol class="flex items-center gap-2 text-gris">
-      <li><a href="/" class="hover:text-blanco transition">Inicio</a></li>
-      <li>/</li>
-      <li><a href="/productos" class="hover:text-blanco transition">Productos</a></li>
-      <li>/</li>
-      <li class="text-blanco">{categoria.nombre}</li>
+      <li><a href="/" class="hover:text-acento transition">Inicio</a></li>
+      <li class="text-borde">/</li>
+      <li><a href="/productos" class="hover:text-acento transition">Productos</a></li>
+      <li class="text-borde">/</li>
+      <li class="text-blanco font-medium">{categoria.nombre}</li>
     </ol>
   </nav>
 
   <!-- Cabecera de Categoría -->
-  <section class="py-8 text-center mb-8">
-    <h1 class="text-4xl font-bold mb-4">{categoria.nombre}</h1>
+  <section class="py-8 text-center mb-8 animate-slide-up">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4">{categoria.nombre}</h1>
     {categoria.descripcion && (
       <p class="text-gris text-lg max-w-2xl mx-auto">{categoria.descripcion}</p>
     )}
   </section>
 
   <!-- Buscador -->
-  <section class="mb-8">
-    <div class="max-w-2xl mx-auto">
+  <section class="mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+    <div class="max-w-2xl mx-auto relative">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gris" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
       <input
         type="text"
         id="buscador"
         placeholder={textos?.buscarPlaceholder || 'Buscar productos...'}
-        class="w-full px-4 py-3 bg-panel border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
+        class="w-full pl-12 pr-4 py-4 bg-panel border border-borde rounded-2xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
       />
     </div>
   </section>
 
-  <!-- Ordenación -->
-  <section class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-    <p class="text-gris text-sm">
-      <span id="contador-resultados">{totalProductos}</span> productos encontrados
-    </p>
+  <!-- Layout Principal: Sidebar + Grid -->
+  <div class="flex flex-col lg:flex-row gap-8">
     
-    <div class="flex items-center gap-2">
-      <span class="text-gris text-sm">{textos?.ordenarPor || 'Ordenar por'}:</span>
-      <select
-        id="ordenar"
-        class="bg-panel border border-borde rounded-xl px-3 py-2 text-sm text-blanco focus:outline-none focus:border-acento appearance-none cursor-pointer min-w-[160px]"
-      >
-        <option value="recientes">{textos?.ordenarRecientes || 'Más recientes'}</option>
-        <option value="precio-asc">{textos?.ordenarPrecioMenor || 'Precio: menor a mayor'}</option>
-        <option value="precio-desc">{textos?.ordenarPrecioMayor || 'Precio: mayor a menor'}</option>
-        <option value="nombre-asc">{textos?.ordenarNombreAZ || 'Nombre: A-Z'}</option>
-      </select>
-    </div>
-  </section>
+    <!-- Sidebar Filtros (Mobile Toggle) -->
+    <button 
+      id="toggle-filtros"
+      class="lg:hidden flex items-center justify-center gap-2 px-4 py-3 bg-panel border border-borde rounded-xl text-blanco hover:border-acento/50 transition"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+      </svg>
+      {textos?.filtros || 'Filtros'}
+    </button>
 
-  <!-- Grid Productos -->
-  {productos.length === 0 ? (
-    <div class="text-center py-20">
-      <p class="text-gris text-lg">{textos?.noResultados || 'No hay productos en esta categoría.'}</p>
-      <a href="/productos" class="inline-block mt-4 text-acento hover:underline">Ver todos los productos</a>
-    </div>
-  ) : (
-    <section id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-      {productos.map((producto) => (
-        <div
-          class="producto-card group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition"
-          data-nombre={producto.nombre.toLowerCase()}
-          data-precio={producto.precio}
-          data-fecha={producto.createdAt}
-        >
-          <a href={`/productos/${producto.slug}`} class="block">
-            <div class="aspect-square bg-fondo p-4 relative">
-              {producto.imagen?.url && (
-                <img
-                  src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
-                  alt={producto.nombre}
-                  class="w-full h-full object-contain"
-                  loading="lazy"
+    <!-- Sidebar -->
+    <aside id="sidebar-filtros" class="hidden lg:block w-full lg:w-72 flex-shrink-0 animate-slide-up" style="animation-delay: 0.2s;">
+      <div class="bg-panel border border-borde rounded-2xl p-6 sticky top-4">
+        
+        <!-- Header Filtros -->
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="font-semibold text-lg">{textos?.filtros || 'Filtros'}</h2>
+          <button id="limpiar-filtros" class="text-sm text-acento hover:underline transition">
+            {textos?.limpiarFiltros || 'Limpiar'}
+          </button>
+        </div>
+
+        <!-- Rango de Precio -->
+        <div class="border-b border-borde pb-4 mb-4">
+          <button class="accordion-toggle flex items-center justify-between w-full py-2 text-left group" data-target="precio-content">
+            <span class="font-medium">{textos?.rangoPrecio || 'Rango de Precio'}</span>
+            <svg class="accordion-icon w-5 h-5 transition-transform text-gris group-hover:text-blanco" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div id="precio-content" class="accordion-content open mt-3">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gris">{textos?.simboloMoneda || '€'}<span id="precio-min-label">{precioMin}</span></span>
+                <span class="text-gris">{textos?.simboloMoneda || '€'}<span id="precio-max-label">{precioMax}</span></span>
+              </div>
+              <div class="relative pt-1">
+                <input
+                  type="range"
+                  id="precio-min"
+                  min={precioMin}
+                  max={precioMax}
+                  value={precioMin}
+                  class="w-full"
                 />
-              )}
-              {!producto.enStock && (
-                <span class="absolute top-4 left-4 px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-lg">
-                  Agotado
-                </span>
-              )}
-              <button
-                class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
-                aria-label={textos?.anadirFavoritos || 'Añadir a favoritos'}
-                onclick="event.preventDefault(); event.stopPropagation();"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </button>
+              </div>
+              <div class="relative pt-1">
+                <input
+                  type="range"
+                  id="precio-max"
+                  min={precioMin}
+                  max={precioMax}
+                  value={precioMax}
+                  class="w-full"
+                />
+              </div>
             </div>
-            <div class="p-4">
-              <span class="text-xs text-acento uppercase tracking-wide">{producto.marca}</span>
-              <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition">{producto.nombre}</h3>
-              <p class="text-gris text-sm mt-1 line-clamp-2">{producto.descripcionCorta}</p>
-            </div>
-          </a>
-          <div class="px-4 pb-4 flex items-center justify-between">
-            <span class="text-lg font-bold text-acento">
-              {textos?.simboloMoneda || '€'}{producto.precio.toLocaleString()}
-            </span>
-            <button
-              class="boton-carrito p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition"
-              data-id={producto.id}
-              data-nombre={producto.nombre}
-              data-precio={producto.precio}
-              data-imagen={producto.imagen?.url ? `${STRAPI_URL_BASE}${producto.imagen.url}` : ''}
-              data-slug={producto.slug}
-              aria-label={textos?.anadirAlCarrito || 'Añadir al carrito'}
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </button>
           </div>
         </div>
-      ))}
-    </section>
-  )}
 
-  <!-- Mensaje Sin Resultados (para búsqueda) -->
-  <div id="sin-resultados" class="hidden text-center py-12">
-    <p class="text-gris">{textos?.noResultados || 'No se encontraron productos.'}</p>
+        <!-- Marcas -->
+        {marcasUnicas.length > 0 && (
+          <div>
+            <button class="accordion-toggle flex items-center justify-between w-full py-2 text-left group" data-target="marcas-content">
+              <span class="font-medium">{textos?.marcas || 'Marcas'}</span>
+              <svg class="accordion-icon w-5 h-5 transition-transform text-gris group-hover:text-blanco" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="marcas-content" class="accordion-content open mt-3 space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
+              {marcasUnicas.map((marca) => (
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <input type="checkbox" class="filtro-marca" value={marca} />
+                  <span class="text-sm text-gris group-hover:text-blanco transition">{marca}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 min-w-0">
+      
+      <!-- Barra Superior -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 animate-fade-in">
+        <p class="text-gris text-sm">
+          <span id="contador-resultados">{totalProductos}</span> productos encontrados
+        </p>
+        
+        <div class="flex items-center gap-2">
+          <span class="text-gris text-sm whitespace-nowrap">{textos?.ordenarPor || 'Ordenar por'}:</span>
+          <select
+            id="ordenar"
+            class="bg-panel border border-borde rounded-xl px-4 py-2 text-sm text-blanco focus:outline-none focus:border-acento appearance-none cursor-pointer min-w-[180px]"
+          >
+            <option value="recientes">{textos?.ordenarRecientes || 'Más recientes'}</option>
+            <option value="precio-asc">{textos?.ordenarPrecioMenor || 'Precio: menor a mayor'}</option>
+            <option value="precio-desc">{textos?.ordenarPrecioMayor || 'Precio: mayor a menor'}</option>
+            <option value="nombre-asc">{textos?.ordenarNombreAZ || 'Nombre: A-Z'}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grid Productos -->
+      {productos.length === 0 ? (
+        <div class="text-center py-20">
+          <svg class="w-16 h-16 mx-auto text-gris mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+          <p class="text-gris text-lg mb-4">{textos?.noResultados || 'No hay productos en esta categoría.'}</p>
+          <a href="/productos" class="inline-flex items-center gap-2 px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+            Ver todos los productos
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      ) : (
+        <section id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
+          {productos.map((producto, index) => (
+            <article
+              class="producto-card card-hover group bg-panel rounded-2xl border border-borde overflow-hidden stagger-item"
+              data-nombre={producto.nombre.toLowerCase()}
+              data-precio={producto.precio}
+              data-marca={producto.marca}
+              data-fecha={producto.createdAt}
+              style={`animation-delay: ${index * 0.05}s;`}
+            >
+              <a href={`/productos/${producto.slug}`} class="block">
+                <div class="aspect-square bg-fondo p-6 relative overflow-hidden">
+                  {producto.imagen?.url && (
+                    <img
+                      src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
+                      alt={producto.nombre}
+                      class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  )}
+                  {!producto.enStock && (
+                    <span class="absolute top-4 left-4 px-3 py-1 bg-red-500/20 text-red-400 text-xs font-medium rounded-full border border-red-500/30">
+                      Agotado
+                    </span>
+                  )}
+                  <button
+                    class="absolute top-4 right-4 p-2.5 rounded-full bg-panel/90 opacity-0 group-hover:opacity-100 hover:bg-acento hover:text-fondo transition-all duration-300"
+                    aria-label={textos?.anadirFavoritos || 'Añadir a favoritos'}
+                    onclick="event.preventDefault(); event.stopPropagation();"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="p-5">
+                  <span class="text-xs text-gris uppercase tracking-wide">{producto.marca}</span>
+                  <h3 class="font-semibold text-blanco mt-1 group-hover:text-acento transition line-clamp-1">{producto.nombre}</h3>
+                  <p class="text-gris text-sm mt-2 line-clamp-2">{producto.descripcionCorta}</p>
+                </div>
+              </a>
+              <div class="px-5 pb-5 flex items-center justify-between">
+                <span class="text-xl font-bold text-acento">{textos?.simboloMoneda || '€'}{producto.precio.toLocaleString()}</span>
+                <button 
+                  class="boton-carrito p-3 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition-all duration-300 hover:scale-105"
+                  data-id={producto.id}
+                  data-nombre={producto.nombre}
+                  data-precio={producto.precio}
+                  data-imagen={producto.imagen?.url ? `${STRAPI_URL_BASE}${producto.imagen.url}` : ''}
+                  data-slug={producto.slug}
+                  aria-label={textos?.anadirAlCarrito || 'Añadir al carrito'}
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </button>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
+
+      <!-- Mensaje Sin Resultados -->
+      <div id="sin-resultados" class="hidden text-center py-16">
+        <svg class="w-16 h-16 mx-auto text-gris mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="text-gris text-lg">{textos?.noResultados || 'No se encontraron productos.'}</p>
+        <button id="reset-filtros" class="mt-4 px-6 py-2 bg-acento/10 text-acento rounded-xl hover:bg-acento hover:text-fondo transition">
+          {textos?.limpiarFiltros || 'Limpiar filtros'}
+        </button>
+      </div>
+    </main>
   </div>
 
   <!-- Scripts -->
   <script>
     import { anadirAlCarrito } from '../../lib/carrito.js';
 
-    // Elementos del DOM
+    // Elementos
     const buscador = document.getElementById('buscador') as HTMLInputElement;
     const selectOrdenar = document.getElementById('ordenar') as HTMLSelectElement;
     const gridProductos = document.getElementById('grid-productos') as HTMLElement;
     const contadorResultados = document.getElementById('contador-resultados') as HTMLElement;
     const sinResultados = document.getElementById('sin-resultados') as HTMLElement;
+    
+    const filtrosMarcas = document.querySelectorAll('.filtro-marca') as NodeListOf<HTMLInputElement>;
+    const precioMinInput = document.getElementById('precio-min') as HTMLInputElement;
+    const precioMaxInput = document.getElementById('precio-max') as HTMLInputElement;
+    const precioMinLabel = document.getElementById('precio-min-label') as HTMLElement;
+    const precioMaxLabel = document.getElementById('precio-max-label') as HTMLElement;
+    
+    const toggleFiltros = document.getElementById('toggle-filtros') as HTMLButtonElement;
+    const sidebarFiltros = document.getElementById('sidebar-filtros') as HTMLElement;
+    const limpiarFiltrosBtn = document.getElementById('limpiar-filtros') as HTMLButtonElement;
+    const resetFiltrosBtn = document.getElementById('reset-filtros') as HTMLButtonElement;
 
-    // Función para normalizar texto
+    // Estado
+    let marcasSeleccionadas: string[] = [];
+    let precioMinActual = parseInt(precioMinInput?.value || '0');
+    let precioMaxActual = parseInt(precioMaxInput?.value || '10000');
+
+    // Toggle sidebar mobile
+    toggleFiltros?.addEventListener('click', () => {
+      sidebarFiltros.classList.toggle('hidden');
+      sidebarFiltros.classList.toggle('lg:block');
+    });
+
+    // Accordions
+    document.querySelectorAll('.accordion-toggle').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const targetId = (toggle as HTMLElement).dataset.target;
+        const content = document.getElementById(targetId || '');
+        const icon = toggle.querySelector('.accordion-icon');
+        
+        content?.classList.toggle('open');
+        icon?.classList.toggle('open');
+      });
+    });
+
+    // Normalizar texto
     function normalizarTexto(texto: string): string {
       return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     }
 
-    // Función para filtrar y ordenar
+    // Filtrar y ordenar
     function filtrarYOrdenar(): void {
       if (!gridProductos) return;
-      
+
       const termino = normalizarTexto(buscador?.value || '');
       const orden = selectOrdenar?.value || 'recientes';
       const tarjetas = Array.from(gridProductos.querySelectorAll('.producto-card')) as HTMLElement[];
 
-      // Crear regex
       let regex: RegExp;
       try {
         regex = new RegExp(termino, 'i');
@@ -233,13 +391,17 @@ const metaDescripcion = categoria.descripcion || `Explora nuestra colección de 
         regex = new RegExp(termino.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       }
 
-      // Filtrar
       let visibles = 0;
       tarjetas.forEach((tarjeta) => {
         const nombre = tarjeta.dataset.nombre || '';
-        const coincide = regex.test(normalizarTexto(nombre));
+        const marca = tarjeta.dataset.marca || '';
+        const precio = parseFloat(tarjeta.dataset.precio || '0');
 
-        if (coincide) {
+        const coincideBusqueda = regex.test(normalizarTexto(nombre));
+        const coincideMarca = marcasSeleccionadas.length === 0 || marcasSeleccionadas.includes(marca);
+        const coincidePrecio = precio >= precioMinActual && precio <= precioMaxActual;
+
+        if (coincideBusqueda && coincideMarca && coincidePrecio) {
           tarjeta.classList.remove('hidden');
           visibles++;
         } else {
@@ -267,14 +429,12 @@ const metaDescripcion = categoria.descripcion || `Explora nuestra colección de 
 
       tarjetasVisibles.forEach((tarjeta) => gridProductos.appendChild(tarjeta));
 
-      // Actualizar contador
       if (contadorResultados) {
         contadorResultados.textContent = visibles.toString();
       }
 
-      // Mensaje sin resultados
       if (sinResultados) {
-        if (visibles === 0 && termino) {
+        if (visibles === 0) {
           sinResultados.classList.remove('hidden');
         } else {
           sinResultados.classList.add('hidden');
@@ -282,9 +442,63 @@ const metaDescripcion = categoria.descripcion || `Explora nuestra colección de 
       }
     }
 
+    // Limpiar filtros
+    function limpiarFiltros(): void {
+      filtrosMarcas.forEach(cb => cb.checked = false);
+      marcasSeleccionadas = [];
+
+      if (precioMinInput && precioMaxInput) {
+        precioMinInput.value = precioMinInput.min;
+        precioMaxInput.value = precioMaxInput.max;
+        precioMinActual = parseInt(precioMinInput.min);
+        precioMaxActual = parseInt(precioMaxInput.max);
+        if (precioMinLabel) precioMinLabel.textContent = precioMinInput.min;
+        if (precioMaxLabel) precioMaxLabel.textContent = precioMaxInput.max;
+      }
+
+      if (buscador) buscador.value = '';
+      if (selectOrdenar) selectOrdenar.value = 'recientes';
+
+      filtrarYOrdenar();
+    }
+
     // Event listeners
     buscador?.addEventListener('input', filtrarYOrdenar);
     selectOrdenar?.addEventListener('change', filtrarYOrdenar);
+
+    filtrosMarcas.forEach(cb => {
+      cb.addEventListener('change', () => {
+        marcasSeleccionadas = Array.from(filtrosMarcas)
+          .filter(c => c.checked)
+          .map(c => c.value);
+        filtrarYOrdenar();
+      });
+    });
+
+    precioMinInput?.addEventListener('input', () => {
+      precioMinActual = parseInt(precioMinInput.value);
+      if (precioMinLabel) precioMinLabel.textContent = precioMinInput.value;
+      if (precioMinActual > precioMaxActual) {
+        precioMaxInput.value = precioMinInput.value;
+        precioMaxActual = precioMinActual;
+        if (precioMaxLabel) precioMaxLabel.textContent = precioMinInput.value;
+      }
+      filtrarYOrdenar();
+    });
+
+    precioMaxInput?.addEventListener('input', () => {
+      precioMaxActual = parseInt(precioMaxInput.value);
+      if (precioMaxLabel) precioMaxLabel.textContent = precioMaxInput.value;
+      if (precioMaxActual < precioMinActual) {
+        precioMinInput.value = precioMaxInput.value;
+        precioMinActual = precioMaxActual;
+        if (precioMinLabel) precioMinLabel.textContent = precioMaxInput.value;
+      }
+      filtrarYOrdenar();
+    });
+
+    limpiarFiltrosBtn?.addEventListener('click', limpiarFiltros);
+    resetFiltrosBtn?.addEventListener('click', limpiarFiltros);
 
     // Carrito
     document.querySelectorAll('.boton-carrito').forEach(boton => {

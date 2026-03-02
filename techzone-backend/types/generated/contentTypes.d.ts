@@ -446,6 +446,7 @@ export interface ApiArticuloArticulo extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    destacado: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     extracto: Schema.Attribute.Text & Schema.Attribute.Required;
     fechaPublicacion: Schema.Attribute.Date;
     imagen: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'> &
@@ -491,6 +492,8 @@ export interface ApiCarritoCarrito extends Struct.SingleTypeSchema {
       Schema.Attribute.Private;
     metaDescripcion: Schema.Attribute.Text;
     metaTitulo: Schema.Attribute.String;
+    pedidoExito: Schema.Attribute.String;
+    pedidoExitoMensaje: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     seguirComprando: Schema.Attribute.String;
     subtotal: Schema.Attribute.String;
@@ -500,6 +503,7 @@ export interface ApiCarritoCarrito extends Struct.SingleTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     vacio: Schema.Attribute.String;
+    volverInicio: Schema.Attribute.String;
   };
 }
 
@@ -518,10 +522,8 @@ export interface ApiCategoriaCategoria extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     descripcion: Schema.Attribute.Text;
-    imagen: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios',
-      true
-    >;
+    icono: Schema.Attribute.Media<'images'>;
+    imagen: Schema.Attribute.Media<'images'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -555,10 +557,14 @@ export interface ApiConfiguracionSitioConfiguracionSitio
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     descripcionSitio: Schema.Attribute.Text & Schema.Attribute.Required;
+    direccion: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'M\u00E1laga, Espa\u00F1a'>;
     emailContacto: Schema.Attribute.String & Schema.Attribute.Required;
     etiquetaTema: Schema.Attribute.String;
     facebook: Schema.Attribute.String;
     favicon: Schema.Attribute.Media<'images' | 'files'>;
+    horario: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Lun - Vie: 9:00 - 18:00'>;
     instagram: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -570,11 +576,41 @@ export interface ApiConfiguracionSitioConfiguracionSitio
       Schema.Attribute.Required;
     nombreSitio: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    telefonoContacto: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'+34 912 345 678'>;
     twitter: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     urlSitio: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface ApiMarcaMarca extends Struct.CollectionTypeSchema {
+  collectionName: 'marcas';
+  info: {
+    displayName: 'Marca';
+    pluralName: 'marcas';
+    singularName: 'marca';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    enlace: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::marca.marca'> &
+      Schema.Attribute.Private;
+    logo: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+    nombre: Schema.Attribute.String & Schema.Attribute.Required;
+    orden: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -627,15 +663,30 @@ export interface ApiPaginaInicioPaginaInicio extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
+    bannerBoton: Schema.Attribute.String;
+    bannerEnlace: Schema.Attribute.String;
+    bannerEtiqueta: Schema.Attribute.String;
+    bannerImagen: Schema.Attribute.Media<'images'>;
+    bannerSubtitulo: Schema.Attribute.Text;
+    bannerTitulo: Schema.Attribute.String;
+    beneficios: Schema.Attribute.Component<'inicio.beneficio', true>;
+    blogSeccionSubtitulo: Schema.Attribute.String;
+    blogSeccionTitulo: Schema.Attribute.String;
     categoriasSeccionSubtitulo: Schema.Attribute.String;
     categoriasSeccionTitulo: Schema.Attribute.String &
       Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    estadisticas: Schema.Attribute.Component<'inicio.estadistica', true>;
     heroBadge: Schema.Attribute.String & Schema.Attribute.Required;
     heroBotonPrimario: Schema.Attribute.String & Schema.Attribute.Required;
+    heroBotonPrimarioEnlace: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/productos'>;
     heroBotonSecundario: Schema.Attribute.String & Schema.Attribute.Required;
+    heroBotonSecundarioEnlace: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'#categorias'>;
+    heroImagen: Schema.Attribute.Media<'images'>;
     heroSubtitulo: Schema.Attribute.Text & Schema.Attribute.Required;
     heroTitulo: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
@@ -644,12 +695,16 @@ export interface ApiPaginaInicioPaginaInicio extends Struct.SingleTypeSchema {
       'api::pagina-inicio.pagina-inicio'
     > &
       Schema.Attribute.Private;
+    marcasSeccionSubtitulo: Schema.Attribute.String;
+    marcasSeccionTitulo: Schema.Attribute.String;
     metaDescripcion: Schema.Attribute.Text;
     metaTitulo: Schema.Attribute.String;
     newsletterBoton: Schema.Attribute.String & Schema.Attribute.Required;
+    newsletterNota: Schema.Attribute.String;
     newsletterPlaceholder: Schema.Attribute.String;
     newsletterSubtitulo: Schema.Attribute.Text;
     newsletterTitulo: Schema.Attribute.String & Schema.Attribute.Required;
+    productosSeccionSubtitulo: Schema.Attribute.String;
     productosSeccionTitulo: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
@@ -751,16 +806,33 @@ export interface ApiTextosGeneraleTextosGenerale
     agotado: Schema.Attribute.String & Schema.Attribute.Required;
     anadirFavoritos: Schema.Attribute.String & Schema.Attribute.Required;
     articulosRelacionados: Schema.Attribute.String & Schema.Attribute.Required;
+    asuntoLabel: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Asunto'>;
+    asuntoPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'\u00BFEn qu\u00E9 podemos ayudarte?'>;
     buscarPlaceholder: Schema.Attribute.String & Schema.Attribute.Required;
+    campoRequerido: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Este campo es requerido'>;
     cargarMas: Schema.Attribute.String & Schema.Attribute.Required;
     compartir: Schema.Attribute.String & Schema.Attribute.Required;
+    contactoSubtitulo: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'\u00BFTienes alguna pregunta? Estamos aqu\u00ED para ayudarte.'>;
+    contactoTitulo: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Cont\u00E1ctanos'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    emailInvalido: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'El email no es v\u00E1lido'>;
+    emailLabel: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Email'>;
+    emailPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'tu@email.com'>;
     enStock: Schema.Attribute.String & Schema.Attribute.Required;
     enviarMensaje: Schema.Attribute.String & Schema.Attribute.Required;
     errorCargarContenido: Schema.Attribute.String & Schema.Attribute.Required;
     errorCargarSitio: Schema.Attribute.String;
+    errorFormulario: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Por favor, corrige los errores del formulario'>;
+    favoritoAnadido: Schema.Attribute.String;
     flechaDerecha: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'flechaDerecha'>;
@@ -771,7 +843,17 @@ export interface ApiTextosGeneraleTextosGenerale
       'api::textos-generale.textos-generale'
     > &
       Schema.Attribute.Private;
+    mensajeEnviado: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'\u00A1Mensaje enviado correctamente!'>;
+    mensajeLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Mensaje'>;
+    mensajePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Escribe tu mensaje aqu\u00ED...'>;
     mostrandoResultados: Schema.Attribute.String & Schema.Attribute.Required;
+    nombreLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'nombreLabel'>;
+    nombrePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Tu nombre completo'>;
     noProductosDestacados: Schema.Attribute.String & Schema.Attribute.Required;
     noResultados: Schema.Attribute.String & Schema.Attribute.Required;
     ordenarNombreAZ: Schema.Attribute.String;
@@ -782,6 +864,12 @@ export interface ApiTextosGeneraleTextosGenerale
     productosRelacionados: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     simboloMoneda: Schema.Attribute.String & Schema.Attribute.Required;
+    telefonoInvalido: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'El tel\u00E9fono no es v\u00E1lido'>;
+    telefonoLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Tel\u00E9fono'>;
+    telefonoPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'+34 600 000 000'>;
     tiempoLectura: Schema.Attribute.String & Schema.Attribute.Required;
     todasCategorias: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
@@ -1308,6 +1396,7 @@ declare module '@strapi/strapi' {
       'api::carrito.carrito': ApiCarritoCarrito;
       'api::categoria.categoria': ApiCategoriaCategoria;
       'api::configuracion-sitio.configuracion-sitio': ApiConfiguracionSitioConfiguracionSitio;
+      'api::marca.marca': ApiMarcaMarca;
       'api::navegacion.navegacion': ApiNavegacionNavegacion;
       'api::pagina-inicio.pagina-inicio': ApiPaginaInicioPaginaInicio;
       'api::pagina-producto.pagina-producto': ApiPaginaProductoPaginaProducto;

@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_inicio_estadisticas",
+  "info": {
+    "displayName": "Estadistica",
+    "icon": "chartLine"
+  },
+  "options": {},
+  "attributes": {
+    "numero": {
+      "type": "string",
+      "required": true
+    },
+    "etiqueta": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

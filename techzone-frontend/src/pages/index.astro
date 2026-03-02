@@ -3,19 +3,49 @@ import Layout from "../layouts/Layout.astro";
 import { obtenerDeStrapi, STRAPI_URL_BASE } from "../lib/strapi";
 
 // Tipos
+interface Estadistica {
+  id: number;
+  numero: string;
+  etiqueta: string;
+}
+
+interface Beneficio {
+  id: number;
+  icono: string;
+  titulo: string;
+  descripcion: string;
+}
+
 interface PaginaInicio {
   heroTitulo: string;
   heroSubtitulo: string;
   heroBadge: string;
   heroBotonPrimario: string;
   heroBotonSecundario: string;
+  heroBotonPrimarioEnlace: string;
+  heroBotonSecundarioEnlace: string;
+  heroImagen: { url: string };
+  estadisticas: Estadistica[];
+  beneficios: Beneficio[];
   categoriasSeccionTitulo: string;
   categoriasSeccionSubtitulo: string;
   productosSeccionTitulo: string;
+  productosSeccionSubtitulo: string;
+  bannerEtiqueta: string;
+  bannerTitulo: string;
+  bannerSubtitulo: string;
+  bannerBoton: string;
+  bannerEnlace: string;
+  bannerImagen: { url: string };
+  marcasSeccionTitulo: string;
+  marcasSeccionSubtitulo: string;
+  blogSeccionTitulo: string;
+  blogSeccionSubtitulo: string;
   newsletterTitulo: string;
   newsletterSubtitulo: string;
   newsletterBoton: string;
   newsletterPlaceholder: string;
+  newsletterNota: string;
   metaTitulo: string;
   metaDescripcion: string;
 }
@@ -26,19 +56,19 @@ interface TextosGenerale {
   verMas: string;
   anadirFavoritos: string;
   simboloMoneda: string;
-  flechaIzquierda: string;
-  flechaDerecha: string;
   errorCargarContenido: string;
   noProductosDestacados: string;
   anadirAlCarrito: string;
-  productoAnadido: string;
   tiempoLectura: string;
+  favoritoAnadido: string;
 }
 
 interface Categoria {
   id: number;
   nombre: string;
   slug: string;
+  descripcion: string;
+  icono: { url: string };
 }
 
 interface Producto {
@@ -51,6 +81,14 @@ interface Producto {
   destacado: boolean;
   imagen: { url: string };
   categoria: Categoria;
+}
+
+interface Marca {
+  id: number;
+  nombre: string;
+  logo: { url: string };
+  enlace: string;
+  orden: number;
 }
 
 interface Articulo {
@@ -70,21 +108,25 @@ let pagina: PaginaInicio | null = null;
 let textos: TextosGenerale | null = null;
 let categorias: Categoria[] = [];
 let productosDestacados: Producto[] = [];
+let marcas: Marca[] = [];
 let articulosRecientes: Articulo[] = [];
 let error = false;
 
 try {
-  const resPagina = await obtenerDeStrapi<PaginaInicio>('pagina-inicio');
+  const resPagina = await obtenerDeStrapi<PaginaInicio>('pagina-inicio', 'populate=*');
   pagina = resPagina.data;
   
   const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
   textos = resTextos.data;
   
-  const resCategorias = await obtenerDeStrapi<Categoria[]>('categorias');
+  const resCategorias = await obtenerDeStrapi<Categoria[]>('categorias', 'populate=*');
   categorias = resCategorias.data;
   
   const resProductos = await obtenerDeStrapi<Producto[]>('productos', 'populate=*&filters[destacado][$eq]=true');
   productosDestacados = resProductos.data;
+
+  const resMarcas = await obtenerDeStrapi<Marca[]>('marcas', 'populate=*&sort=orden:asc');
+  marcas = resMarcas.data;
 
   const resArticulos = await obtenerDeStrapi<Articulo[]>('articulos', 'populate=*&sort=fechaPublicacion:desc&pagination[limit]=3');
   articulosRecientes = resArticulos.data;
@@ -117,51 +159,25 @@ function formatearFecha(fecha: string): string {
   });
 }
 
-// Marcas destacadas (hardcoded - no necesita CMS)
-const marcas = [
-  { nombre: 'Apple', logo: '🍎' },
-  { nombre: 'Samsung', logo: '📱' },
-  { nombre: 'Sony', logo: '🎧' },
-  { nombre: 'Microsoft', logo: '💻' },
-  { nombre: 'Google', logo: '🔍' },
-  { nombre: 'Xiaomi', logo: '📲' },
-];
+// Mapeo de iconos para beneficios
+const iconosSVG: Record<string, string> = {
+  truck: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>`,
+  shield: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>`,
+  refresh: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>`,
+  headphones: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>`,
+  star: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>`,
+  clock: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
+};
 
-// Beneficios (hardcoded - no necesita CMS)
-const beneficios = [
-  {
-    icono: 'truck',
-    titulo: 'Envío Gratis',
-    descripcion: 'En pedidos superiores a 50€'
-  },
-  {
-    icono: 'shield',
-    titulo: 'Garantía 2 Años',
-    descripcion: 'Protección completa en todos los productos'
-  },
-  {
-    icono: 'refresh',
-    titulo: 'Devolución Fácil',
-    descripcion: '30 días para cambios y devoluciones'
-  },
-  {
-    icono: 'headphones',
-    titulo: 'Soporte 24/7',
-    descripcion: 'Atención al cliente siempre disponible'
-  }
-];
-
-// Estadísticas
-const estadisticas = [
-  { numero: '10K+', label: 'Clientes Satisfechos' },
-  { numero: '500+', label: 'Productos' },
-  { numero: '50+', label: 'Marcas Premium' },
-  { numero: '4.9', label: 'Valoración Media' }
-];
+// Texto para favoritos
+const textoFavoritoAnadido = textos?.favoritoAnadido || 'Añadido a favoritos';
 ---
 
 <Layout titulo={pagina?.metaTitulo} descripcion={pagina?.metaDescripcion}>
   
+  <!-- Data for JS -->
+  <div id="datos-textos" data-favorito={textoFavoritoAnadido} class="hidden"></div>
+
   {error || !pagina || !textos ? (
     <div class="text-center py-20 text-error">
       <p>{textos?.errorCargarContenido || 'Error al cargar el contenido.'}</p>
@@ -169,78 +185,82 @@ const estadisticas = [
   ) : (
     <>
       <!-- Hero Section -->
-      <section class="py-16 md:py-24 text-center">
-        <span class="inline-block px-4 py-1 text-sm font-medium text-acento bg-acento/10 rounded-full mb-6 animate-pulse">
-          {pagina.heroBadge}
-        </span>
-        <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-          {pagina.heroTitulo.includes('.') ? (
-            <>
-              {pagina.heroTitulo.split('.')[0]}.<br/>
-              <span class="text-acento">{pagina.heroTitulo.split('.')[1]}</span>
-            </>
-          ) : (
-            pagina.heroTitulo
-          )}
-        </h1>
-        <p class="text-gris text-lg md:text-xl max-w-2xl mx-auto mb-8">
-          {pagina.heroSubtitulo}
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/productos" class="px-8 py-4 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition text-lg">
-            {pagina.heroBotonPrimario}
-          </a>
-          <a href="#categorias" class="px-8 py-4 border border-borde text-blanco rounded-xl hover:bg-panel transition text-lg">
-            {pagina.heroBotonSecundario}
-          </a>
+      <section class="py-12 md:py-20 animate-fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <!-- Hero Content -->
+          <div class="text-center lg:text-left">
+            <span class="inline-block px-4 py-1.5 text-sm font-medium text-acento bg-acento/10 rounded-full mb-6">
+              {pagina.heroBadge}
+            </span>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-tight">
+              {pagina.heroTitulo.includes('.') ? (
+                <>
+                  {pagina.heroTitulo.split('.')[0]}.<br/>
+                  <span class="text-acento">{pagina.heroTitulo.split('.')[1]}</span>
+                </>
+              ) : (
+                pagina.heroTitulo
+              )}
+            </h1>
+            <p class="text-gris text-lg md:text-xl mb-8 max-w-lg mx-auto lg:mx-0">
+              {pagina.heroSubtitulo}
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <a href={pagina.heroBotonPrimarioEnlace || '/productos'} class="btn-primary px-8 py-4 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition text-lg">
+                {pagina.heroBotonPrimario}
+              </a>
+              <a href={pagina.heroBotonSecundarioEnlace || '#categorias'} class="px-8 py-4 border border-borde text-blanco rounded-xl hover:bg-panel transition text-lg">
+                {pagina.heroBotonSecundario}
+              </a>
+            </div>
+          </div>
+          
+          <!-- Hero Image -->
+          <div class="relative animate-slide-up" style="animation-delay: 0.2s;">
+            {pagina.heroImagen?.url && (
+              <div class="relative">
+                <div class="absolute inset-0 bg-acento/20 rounded-3xl blur-3xl transform -rotate-6"></div>
+                <img 
+                  src={`${STRAPI_URL_BASE}${pagina.heroImagen.url}`}
+                  alt="Productos destacados"
+                  class="relative w-full h-auto rounded-3xl shadow-2xl"
+                />
+              </div>
+            )}
+          </div>
         </div>
         
-        <!-- Estadísticas en Hero -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-16 border-t border-borde">
-          {estadisticas.map((stat) => (
-            <div class="text-center">
-              <p class="text-3xl md:text-4xl font-bold text-acento">{stat.numero}</p>
-              <p class="text-sm text-gris mt-1">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <!-- Beneficios -->
-      <section class="py-12 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-panel/50">
-        <div class="max-w-6xl mx-auto">
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {beneficios.map((beneficio) => (
-              <div class="flex flex-col items-center text-center p-4">
-                <div class="w-12 h-12 rounded-2xl bg-acento/10 flex items-center justify-center mb-4">
-                  {beneficio.icono === 'truck' && (
-                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
-                  )}
-                  {beneficio.icono === 'shield' && (
-                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  )}
-                  {beneficio.icono === 'refresh' && (
-                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  )}
-                  {beneficio.icono === 'headphones' && (
-                    <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  )}
-                </div>
-                <h3 class="font-semibold text-blanco mb-1">{beneficio.titulo}</h3>
-                <p class="text-xs text-gris">{beneficio.descripcion}</p>
+        <!-- Estadísticas -->
+        {pagina.estadisticas && pagina.estadisticas.length > 0 && (
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-12 border-t border-borde">
+            {pagina.estadisticas.map((stat, index) => (
+              <div class="text-center animate-slide-up" style={`animation-delay: ${0.1 * index}s;`}>
+                <p class="text-3xl md:text-4xl font-bold text-acento">{stat.numero}</p>
+                <p class="text-sm text-gris mt-1">{stat.etiqueta}</p>
               </div>
             ))}
           </div>
-        </div>
+        )}
       </section>
+
+      <!-- Beneficios -->
+      {pagina.beneficios && pagina.beneficios.length > 0 && (
+        <section class="py-12 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-panel/50 rounded-3xl">
+          <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {pagina.beneficios.map((beneficio, index) => (
+                <div class="flex flex-col items-center text-center p-4 animate-slide-up" style={`animation-delay: ${0.1 * index}s;`}>
+                  <div class="w-12 h-12 rounded-2xl bg-acento/10 flex items-center justify-center mb-4 text-acento">
+                    <Fragment set:html={iconosSVG[beneficio.icono] || iconosSVG.star} />
+                  </div>
+                  <h3 class="font-semibold text-blanco mb-1">{beneficio.titulo}</h3>
+                  <p class="text-xs text-gris">{beneficio.descripcion}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <!-- Categorías -->
       <section id="categorias" class="py-16">
@@ -256,15 +276,19 @@ const estadisticas = [
           {categorias.map((categoria, index) => (
             <a 
               href={`/categorias/${categoria.slug}`} 
-              class="group relative p-6 bg-panel rounded-2xl border border-borde hover:border-acento/50 transition overflow-hidden"
+              class="card-hover group relative p-6 bg-panel rounded-2xl border border-borde overflow-hidden animate-slide-up"
+              style={`animation-delay: ${0.05 * index}s;`}
             >
               <div class="absolute top-0 right-0 w-24 h-24 bg-acento/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-acento/10 transition"></div>
-              <span class="text-3xl mb-4 block">
-                {index === 0 && '💻'}
-                {index === 1 && '📱'}
-                {index === 2 && '🎧'}
-                {index === 3 && '⌚'}
-              </span>
+              {categoria.icono?.url ? (
+                <img 
+                  src={`${STRAPI_URL_BASE}${categoria.icono.url}`}
+                  alt={categoria.nombre}
+                  class="w-12 h-12 mb-4 object-contain"
+                />
+              ) : (
+                <span class="text-3xl mb-4 block">📦</span>
+              )}
               <h3 class="font-semibold text-blanco group-hover:text-acento transition">{categoria.nombre}</h3>
               <p class="text-gris text-sm mt-1">{textos.verProductos} →</p>
             </a>
@@ -278,15 +302,15 @@ const estadisticas = [
         <div class="flex justify-between items-center mb-8">
           <div>
             <h2 class="text-2xl md:text-3xl font-bold">{pagina.productosSeccionTitulo}</h2>
-            <p class="text-gris text-sm mt-1">Los favoritos de nuestros clientes</p>
+            <p class="text-gris text-sm mt-1">{pagina.productosSeccionSubtitulo}</p>
           </div>
           <div class="flex gap-2">
-            <button id="btn-prev" class="p-2 rounded-full border border-borde hover:bg-panel transition">
+            <button id="btn-prev" class="p-2 rounded-full border border-borde hover:bg-panel transition cursor-pointer">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <button id="btn-next" class="p-2 rounded-full bg-acento text-fondo hover:opacity-90 transition">
+            <button id="btn-next" class="p-2 rounded-full bg-acento text-fondo hover:opacity-90 transition cursor-pointer">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
@@ -301,20 +325,21 @@ const estadisticas = [
         ) : (
           <div id="carousel-productos" class="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
             {productosDestacados.map((producto) => (
-              <div class="flex-shrink-0 w-[280px] snap-start group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+              <div class="flex-shrink-0 w-[280px] snap-start card-hover group bg-panel rounded-2xl border border-borde overflow-hidden">
                 <a href={`/productos/${producto.slug}`} class="block">
-                  <div class="aspect-square bg-fondo p-4 relative">
+                  <div class="aspect-square bg-fondo p-4 relative overflow-hidden">
                     {producto.imagen?.url && (
                       <img 
                         src={`${STRAPI_URL_BASE}${producto.imagen.url}`}
                         alt={producto.nombre}
-                        class="w-full h-full object-contain"
+                        class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                       />
                     )}
                     <button 
-                      class="absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-acento hover:text-fondo transition"
+                      class="boton-favorito absolute top-4 right-4 p-2 rounded-full bg-panel/80 hover:bg-red-500 hover:text-white transition cursor-pointer opacity-0 group-hover:opacity-100"
                       aria-label={textos.anadirFavoritos}
-                      onclick="event.preventDefault(); event.stopPropagation();"
+                      data-id={producto.id}
+                      data-nombre={producto.nombre}
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -329,13 +354,13 @@ const estadisticas = [
                 <div class="px-4 pb-4 flex items-center justify-between">
                   <span class="text-lg font-bold text-acento">{textos.simboloMoneda}{producto.precio.toLocaleString()}</span>
                   <button 
-                    class="boton-carrito p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition"
+                    class="boton-carrito p-2 rounded-xl bg-acento/10 text-acento hover:bg-acento hover:text-fondo transition cursor-pointer"
                     data-id={producto.id}
                     data-nombre={producto.nombre}
                     data-precio={producto.precio}
                     data-imagen={producto.imagen?.url ? `${STRAPI_URL_BASE}${producto.imagen.url}` : ''}
                     data-slug={producto.slug}
-                    aria-label={textos.anadirAlCarrito || 'Añadir al carrito'}
+                    aria-label={textos.anadirAlCarrito}
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -349,69 +374,100 @@ const estadisticas = [
       </section>
 
       <!-- Banner Promocional -->
-      <section class="py-16">
-        <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-acento/20 to-purple-500/20 border border-acento/30">
-          <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.05%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
-          <div class="relative p-8 md:p-12 lg:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div class="text-center md:text-left">
-              <span class="inline-block px-3 py-1 bg-acento/20 text-acento text-sm font-medium rounded-full mb-4">
-                Oferta Especial
-              </span>
-              <h2 class="text-3xl md:text-4xl font-bold mb-4">
-                Hasta <span class="text-acento">30% OFF</span> en Auriculares
-              </h2>
-              <p class="text-gris mb-6 max-w-md">
-                Disfruta del mejor sonido con nuestra selección premium de auriculares. Oferta por tiempo limitado.
-              </p>
-              <a href="/categorias/auriculares" class="inline-flex items-center gap-2 px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
-                Ver Ofertas
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
+      {pagina.bannerTitulo && (
+        <section class="py-16">
+          <div class="relative rounded-3xl overflow-hidden bg-gradient-to-br from-acento/30 via-purple-600/20 to-fondo border border-acento/20">
+            <div class="relative p-8 md:p-12 lg:p-16 flex flex-col md:flex-row items-center justify-between gap-8 min-h-[300px]">
+              <div class="text-center md:text-left flex-1 z-10">
+                {pagina.bannerEtiqueta && (
+                  <span class="inline-block px-3 py-1 bg-acento/20 text-acento text-sm font-medium rounded-full mb-4">
+                    {pagina.bannerEtiqueta}
+                  </span>
+                )}
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">
+                  {pagina.bannerTitulo}
+                </h2>
+                {pagina.bannerSubtitulo && (
+                  <p class="text-gris mb-6 max-w-md">
+                    {pagina.bannerSubtitulo}
+                  </p>
+                )}
+                {pagina.bannerBoton && pagina.bannerEnlace && (
+                  <a href={pagina.bannerEnlace} class="btn-primary inline-flex items-center gap-2 px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+                    {pagina.bannerBoton}
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+              {pagina.bannerImagen?.url && (
+                <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1/2 h-full hidden md:flex items-center justify-center">
+                  <div class="relative">
+                    <div class="absolute inset-0 bg-acento/20 blur-3xl rounded-full scale-75"></div>
+                    <img 
+                      src={`${STRAPI_URL_BASE}${pagina.bannerImagen.url}`}
+                      alt={pagina.bannerTitulo}
+                      class="relative w-72 h-72 lg:w-96 lg:h-96 object-contain drop-shadow-2xl"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <div class="text-8xl">🎧</div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <!-- Marcas -->
-      <section class="py-16">
-        <div class="text-center mb-10">
-          <h2 class="text-2xl md:text-3xl font-bold mb-2">Marcas de Confianza</h2>
-          <p class="text-gris">Trabajamos con las mejores marcas del mercado</p>
-        </div>
-        <div class="flex flex-wrap justify-center items-center gap-8 md:gap-12">
-          {marcas.map((marca) => (
-            <div class="flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition cursor-pointer">
-              <span class="text-4xl">{marca.logo}</span>
-              <span class="text-sm text-gris">{marca.nombre}</span>
+      {marcas.length > 0 && (
+        <section class="py-16">
+          <div class="text-center mb-10">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">{pagina.marcasSeccionTitulo}</h2>
+            <p class="text-gris">{pagina.marcasSeccionSubtitulo}</p>
+          </div>
+          
+          <div class="relative overflow-hidden">
+            <div id="marcas-slider" class="flex gap-12 animate-scroll">
+              {[...marcas, ...marcas].map((marca) => (
+                <div class="flex-shrink-0 flex flex-col items-center gap-3 opacity-60 hover:opacity-100 transition cursor-pointer group">
+                  {marca.logo?.url ? (
+                    <img 
+                      src={`${STRAPI_URL_BASE}${marca.logo.url}`}
+                      alt={marca.nombre}
+                      class="h-12 w-auto object-contain grayscale group-hover:grayscale-0 transition"
+                    />
+                  ) : (
+                    <span class="text-4xl">🏢</span>
+                  )}
+                  <span class="text-sm text-gris group-hover:text-blanco transition">{marca.nombre}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       <!-- Últimos Artículos del Blog -->
       {articulosRecientes.length > 0 && (
         <section class="py-16">
           <div class="flex justify-between items-center mb-8">
             <div>
-              <h2 class="text-2xl md:text-3xl font-bold">Últimos del Blog</h2>
-              <p class="text-gris text-sm mt-1">Novedades y guías de tecnología</p>
+              <h2 class="text-2xl md:text-3xl font-bold">{pagina.blogSeccionTitulo}</h2>
+              <p class="text-gris text-sm mt-1">{pagina.blogSeccionSubtitulo}</p>
             </div>
             <a href="/blog" class="text-acento text-sm hover:underline hidden sm:block">{textos.verMas} →</a>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {articulosRecientes.map((articulo) => (
-              <article class="group bg-panel rounded-2xl border border-borde overflow-hidden hover:border-acento/50 transition">
+            {articulosRecientes.map((articulo, index) => (
+              <article class="card-hover group bg-panel rounded-2xl border border-borde overflow-hidden animate-slide-up" style={`animation-delay: ${0.1 * index}s;`}>
                 <a href={`/blog/${articulo.slug}`} class="block">
                   <div class="aspect-video bg-fondo relative overflow-hidden">
                     {articulo.imagen?.url && (
                       <img
                         src={`${STRAPI_URL_BASE}${articulo.imagen.url}`}
                         alt={articulo.titulo}
-                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                       />
                     )}
@@ -420,7 +476,7 @@ const estadisticas = [
                     <div class="flex items-center gap-3 text-xs text-gris mb-3">
                       <span>{formatearFecha(articulo.fechaPublicacion || articulo.createdAt)}</span>
                       <span>•</span>
-                      <span>{calcularTiempoLectura(articulo.contenido)} min {textos.tiempoLectura || 'de lectura'}</span>
+                      <span>{calcularTiempoLectura(articulo.contenido)} min {textos.tiempoLectura}</span>
                     </div>
                     <h3 class="text-lg font-semibold text-blanco group-hover:text-acento transition mb-2 line-clamp-2">
                       {articulo.titulo}
@@ -444,17 +500,20 @@ const estadisticas = [
             <span class="text-4xl mb-4 block">📬</span>
             <h2 class="text-2xl md:text-3xl font-bold mb-4">{pagina.newsletterTitulo}</h2>
             <p class="text-gris mb-6">{pagina.newsletterSubtitulo}</p>
-            <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <form id="newsletter-form" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <input 
                 type="email" 
                 placeholder={pagina.newsletterPlaceholder}
-                class="flex-1 px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento"
+                class="flex-1 px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                required
               />
-              <button type="submit" class="px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
+              <button type="submit" class="btn-primary px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition cursor-pointer">
                 {pagina.newsletterBoton}
               </button>
             </form>
-            <p class="text-xs text-gris mt-4">Sin spam. Cancela cuando quieras.</p>
+            {pagina.newsletterNota && (
+              <p class="text-xs text-gris mt-4">{pagina.newsletterNota}</p>
+            )}
           </div>
         </div>
       </section>
@@ -464,6 +523,10 @@ const estadisticas = [
   <!-- Scripts -->
   <script>
     import { anadirAlCarrito } from '../lib/carrito.js';
+
+    // Obtener texto de favorito desde el DOM
+    const datosTextos = document.getElementById('datos-textos') as HTMLElement;
+    const textoFavorito = datosTextos?.dataset.favorito || 'Añadido a favoritos';
 
     // Carrito
     document.querySelectorAll('.boton-carrito').forEach(boton => {
@@ -488,6 +551,30 @@ const estadisticas = [
       });
     });
 
+    // Favoritos
+    document.querySelectorAll('.boton-favorito').forEach(boton => {
+      boton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const btn = e.currentTarget as HTMLElement;
+        const svg = btn.querySelector('svg');
+        
+        // Toggle filled heart
+        if (svg) {
+          const isFilled = svg.getAttribute('fill') === 'currentColor';
+          svg.setAttribute('fill', isFilled ? 'none' : 'currentColor');
+          btn.classList.toggle('bg-red-500', !isFilled);
+          btn.classList.toggle('text-white', !isFilled);
+          btn.classList.toggle('bg-panel/80', isFilled);
+        }
+        
+        if ((window as any).mostrarToast) {
+          (window as any).mostrarToast(textoFavorito);
+        }
+      });
+    });
+
     // Carousel de productos
     const carousel = document.getElementById('carousel-productos');
     const btnPrev = document.getElementById('btn-prev');
@@ -504,6 +591,16 @@ const estadisticas = [
         carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
       });
     }
+
+    // Newsletter form
+    const newsletterForm = document.getElementById('newsletter-form');
+    newsletterForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if ((window as any).mostrarToast) {
+        (window as any).mostrarToast('¡Gracias por suscribirte!');
+      }
+      (newsletterForm as HTMLFormElement).reset();
+    });
   </script>
 
   <style>
@@ -513,6 +610,19 @@ const estadisticas = [
     }
     .scrollbar-hide::-webkit-scrollbar {
       display: none;
+    }
+    
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    
+    .animate-scroll {
+      animation: scroll 20s linear infinite;
+    }
+    
+    .animate-scroll:hover {
+      animation-play-state: paused;
     }
   </style>
 </Layout>

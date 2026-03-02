@@ -1,0 +1,550 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { obtenerDeStrapi } from "../../lib/strapi";
+
+// Tipos
+interface TextosGenerale {
+  contactoTitulo: string;
+  contactoSubtitulo: string;
+  nombreLabel: string;
+  emailLabel: string;
+  telefonoLabel: string;
+  asuntoLabel: string;
+  mensajeLabel: string;
+  enviarMensaje: string;
+  mensajeEnviado: string;
+  errorFormulario: string;
+  campoRequerido: string;
+  emailInvalido: string;
+  telefonoInvalido: string;
+  nombrePlaceholder: string;
+  emailPlaceholder: string;
+  telefonoPlaceholder: string;
+  asuntoPlaceholder: string;
+  mensajePlaceholder: string;
+}
+
+interface ConfiguracionSitio {
+  emailContacto: string;
+  telefonoContacto: string;
+  direccion: string;
+  horario: string;
+}
+
+// Obtener datos
+let textos: TextosGenerale | null = null;
+let config: ConfiguracionSitio | null = null;
+
+try {
+  const resTextos = await obtenerDeStrapi<TextosGenerale>('textos-generale');
+  textos = resTextos.data;
+
+  const resConfig = await obtenerDeStrapi<ConfiguracionSitio>('configuracion-sitio');
+  config = resConfig.data;
+} catch (e) {
+  console.error('Error:', e);
+}
+
+const metaTitulo = "Contacto | GaleríaTech";
+const metaDescripcion = "Ponte en contacto con nosotros. Estamos aquí para ayudarte.";
+---
+
+<Layout titulo={metaTitulo} descripcion={metaDescripcion}>
+  
+  <!-- Background Gradient -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-acento/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-1/3 left-0 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- Header -->
+  <section class="py-8 text-center mb-8 animate-fade-in">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4">{textos?.contactoTitulo}</h1>
+    <p class="text-gris text-lg max-w-2xl mx-auto">
+      {textos?.contactoSubtitulo}
+    </p>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 mb-12">
+    
+    <!-- Contact Info -->
+    <aside class="lg:col-span-1 space-y-6 animate-slide-up">
+      
+      <!-- Email -->
+      <div class="bg-panel border border-borde rounded-2xl p-6 card-hover">
+        <div class="w-12 h-12 rounded-xl bg-acento/10 flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-blanco mb-1">{textos?.emailLabel}</h3>
+        <a href={`mailto:${config?.emailContacto}`} class="text-gris hover:text-acento transition">
+          {config?.emailContacto}
+        </a>
+      </div>
+
+      <!-- Phone -->
+      <div class="bg-panel border border-borde rounded-2xl p-6 card-hover">
+        <div class="w-12 h-12 rounded-xl bg-acento/10 flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-blanco mb-1">{textos?.telefonoLabel}</h3>
+        <a href={`tel:${config?.telefonoContacto}`} class="text-gris hover:text-acento transition">
+          {config?.telefonoContacto}
+        </a>
+      </div>
+
+      <!-- Location -->
+      <div class="bg-panel border border-borde rounded-2xl p-6 card-hover">
+        <div class="w-12 h-12 rounded-xl bg-acento/10 flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-blanco mb-1">Ubicación</h3>
+        <p class="text-gris">{config?.direccion}</p>
+      </div>
+
+      <!-- Hours -->
+      <div class="bg-panel border border-borde rounded-2xl p-6 card-hover">
+        <div class="w-12 h-12 rounded-xl bg-acento/10 flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-blanco mb-1">Horario</h3>
+        <p class="text-gris">{config?.horario}</p>
+      </div>
+    </aside>
+
+    <!-- Contact Form -->
+    <div class="lg:col-span-2 animate-slide-up" style="animation-delay: 0.1s;">
+      <div class="bg-panel border border-borde rounded-2xl p-6 md:p-8">
+        <h2 class="text-xl font-bold mb-6">{textos?.enviarMensaje}</h2>
+        
+        <!-- Success Message -->
+        <div id="mensaje-exito" class="hidden mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-center animate-slide-down">
+          <svg class="w-6 h-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          {textos?.mensajeEnviado}
+        </div>
+
+        <!-- Error Message -->
+        <div id="mensaje-error" class="hidden mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-center">
+          {textos?.errorFormulario}
+        </div>
+        
+        <form id="formulario-contacto" class="space-y-6" novalidate>
+          <!-- Name & Email Row -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Name -->
+            <div>
+              <label for="nombre" class="block text-sm font-medium text-blanco mb-2">
+                {textos?.nombreLabel} <span class="text-acento">*</span>
+              </label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                required
+                minlength="2"
+                class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                placeholder={textos?.nombrePlaceholder}
+                data-error-requerido={textos?.campoRequerido}
+              />
+              <p class="error-mensaje hidden text-red-400 text-xs mt-2 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label for="email" class="block text-sm font-medium text-blanco mb-2">
+                {textos?.emailLabel} <span class="text-acento">*</span>
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                placeholder={textos?.emailPlaceholder}
+                data-error-requerido={textos?.campoRequerido}
+                data-error-invalido={textos?.emailInvalido}
+              />
+              <p class="error-mensaje hidden text-red-400 text-xs mt-2 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span></span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Phone & Subject Row -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Phone -->
+            <div>
+              <label for="telefono" class="block text-sm font-medium text-blanco mb-2">
+                {textos?.telefonoLabel}
+              </label>
+              <input
+                type="tel"
+                id="telefono"
+                name="telefono"
+                class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                placeholder={textos?.telefonoPlaceholder}
+                data-error-invalido={textos?.telefonoInvalido}
+              />
+              <p class="error-mensaje hidden text-red-400 text-xs mt-2 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Subject -->
+            <div>
+              <label for="asunto" class="block text-sm font-medium text-blanco mb-2">
+                {textos?.asuntoLabel} <span class="text-acento">*</span>
+              </label>
+              <input
+                type="text"
+                id="asunto"
+                name="asunto"
+                required
+                class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                placeholder={textos?.asuntoPlaceholder}
+                data-error-requerido={textos?.campoRequerido}
+              />
+              <p class="error-mensaje hidden text-red-400 text-xs mt-2 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span></span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Message -->
+          <div>
+            <label for="mensaje" class="block text-sm font-medium text-blanco mb-2">
+              {textos?.mensajeLabel} <span class="text-acento">*</span>
+            </label>
+            <textarea
+              id="mensaje"
+              name="mensaje"
+              required
+              rows="5"
+              minlength="10"
+              class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition resize-none"
+              placeholder={textos?.mensajePlaceholder}
+              data-error-requerido={textos?.campoRequerido}
+            ></textarea>
+            <p class="error-mensaje hidden text-red-400 text-xs mt-2 flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span></span>
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            id="boton-enviar"
+            class="btn-primary w-full py-4 px-6 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2"
+          >
+            <span id="boton-texto">{textos?.enviarMensaje}</span>
+            <svg id="boton-icono" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+            <!-- Loading spinner -->
+            <svg id="boton-loading" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Validation Script -->
+  <script>
+    // ============================================
+    // EXPRESIONES REGULARES PARA VALIDACIÓN
+    // (Requisito obligatorio del proyecto)
+    // ============================================
+    
+    // Regex para validar email
+    // Patrón: usuario@dominio.extension
+    const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    // Regex para validar teléfono español
+    // Acepta: +34 600 000 000, 600000000, 600 00 00 00, etc.
+    const regexTelefono = /^(\+34\s?)?[6789]\d{2}[\s.-]?\d{3}[\s.-]?\d{3}$/;
+    
+    // Regex para validar nombre (solo letras y espacios, mínimo 2 caracteres)
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,}$/;
+
+    // ============================================
+    // ELEMENTOS DEL DOM
+    // ============================================
+    const formulario = document.getElementById('formulario-contacto') as HTMLFormElement;
+    const mensajeExito = document.getElementById('mensaje-exito') as HTMLElement;
+    const mensajeError = document.getElementById('mensaje-error') as HTMLElement;
+    const botonEnviar = document.getElementById('boton-enviar') as HTMLButtonElement;
+    const botonTexto = document.getElementById('boton-texto') as HTMLElement;
+    const botonIcono = document.getElementById('boton-icono') as HTMLElement;
+    const botonLoading = document.getElementById('boton-loading') as HTMLElement;
+
+    // Campos del formulario
+    const campoNombre = document.getElementById('nombre') as HTMLInputElement;
+    const campoEmail = document.getElementById('email') as HTMLInputElement;
+    const campoTelefono = document.getElementById('telefono') as HTMLInputElement;
+    const campoAsunto = document.getElementById('asunto') as HTMLInputElement;
+    const campoMensaje = document.getElementById('mensaje') as HTMLTextAreaElement;
+
+    // ============================================
+    // FUNCIONES DE VALIDACIÓN
+    // ============================================
+    
+    /**
+     * Muestra error en un campo específico
+     * @param campo - El elemento input/textarea
+     * @param mensaje - Mensaje de error a mostrar
+     */
+    function mostrarError(campo: HTMLInputElement | HTMLTextAreaElement, mensaje: string): void {
+      const contenedor = campo.parentElement;
+      const errorElemento = contenedor?.querySelector('.error-mensaje') as HTMLElement;
+      const errorTexto = errorElemento?.querySelector('span') as HTMLElement;
+      
+      campo.classList.add('border-red-500');
+      campo.classList.remove('border-borde', 'border-acento');
+      
+      if (errorElemento && errorTexto) {
+        errorTexto.textContent = mensaje;
+        errorElemento.classList.remove('hidden');
+      }
+    }
+
+    /**
+     * Oculta error de un campo específico
+     * @param campo - El elemento input/textarea
+     */
+    function ocultarError(campo: HTMLInputElement | HTMLTextAreaElement): void {
+      const contenedor = campo.parentElement;
+      const errorElemento = contenedor?.querySelector('.error-mensaje') as HTMLElement;
+      
+      campo.classList.remove('border-red-500');
+      campo.classList.add('border-borde');
+      
+      if (errorElemento) {
+        errorElemento.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Muestra estado de éxito en un campo
+     * @param campo - El elemento input/textarea
+     */
+    function mostrarExito(campo: HTMLInputElement | HTMLTextAreaElement): void {
+      campo.classList.remove('border-red-500', 'border-borde');
+      campo.classList.add('border-green-500');
+    }
+
+    /**
+     * Valida el campo nombre usando regex
+     * @returns boolean - true si es válido
+     */
+    function validarNombre(): boolean {
+      const valor = campoNombre.value.trim();
+      const errorRequerido = campoNombre.dataset.errorRequerido || 'Este campo es requerido';
+      
+      if (!valor) {
+        mostrarError(campoNombre, errorRequerido);
+        return false;
+      }
+      
+      if (!regexNombre.test(valor)) {
+        mostrarError(campoNombre, 'Solo se permiten letras y espacios');
+        return false;
+      }
+      
+      ocultarError(campoNombre);
+      mostrarExito(campoNombre);
+      return true;
+    }
+
+    /**
+     * Valida el campo email usando regex
+     * @returns boolean - true si es válido
+     */
+    function validarEmail(): boolean {
+      const valor = campoEmail.value.trim();
+      const errorRequerido = campoEmail.dataset.errorRequerido || 'Este campo es requerido';
+      const errorInvalido = campoEmail.dataset.errorInvalido || 'El email no es válido';
+      
+      if (!valor) {
+        mostrarError(campoEmail, errorRequerido);
+        return false;
+      }
+      
+      if (!regexEmail.test(valor)) {
+        mostrarError(campoEmail, errorInvalido);
+        return false;
+      }
+      
+      ocultarError(campoEmail);
+      mostrarExito(campoEmail);
+      return true;
+    }
+
+    /**
+     * Valida el campo teléfono usando regex (opcional pero si tiene valor debe ser válido)
+     * @returns boolean - true si es válido o vacío
+     */
+    function validarTelefono(): boolean {
+      const valor = campoTelefono.value.trim();
+      const errorInvalido = campoTelefono.dataset.errorInvalido || 'El teléfono no es válido';
+      
+      // El teléfono es opcional, solo validar si tiene valor
+      if (valor && !regexTelefono.test(valor)) {
+        mostrarError(campoTelefono, errorInvalido);
+        return false;
+      }
+      
+      ocultarError(campoTelefono);
+      if (valor) mostrarExito(campoTelefono);
+      return true;
+    }
+
+    /**
+     * Valida el campo asunto
+     * @returns boolean - true si es válido
+     */
+    function validarAsunto(): boolean {
+      const valor = campoAsunto.value.trim();
+      const errorRequerido = campoAsunto.dataset.errorRequerido || 'Este campo es requerido';
+      
+      if (!valor) {
+        mostrarError(campoAsunto, errorRequerido);
+        return false;
+      }
+      
+      ocultarError(campoAsunto);
+      mostrarExito(campoAsunto);
+      return true;
+    }
+
+    /**
+     * Valida el campo mensaje
+     * @returns boolean - true si es válido
+     */
+    function validarMensaje(): boolean {
+      const valor = campoMensaje.value.trim();
+      const errorRequerido = campoMensaje.dataset.errorRequerido || 'Este campo es requerido';
+      
+      if (!valor) {
+        mostrarError(campoMensaje, errorRequerido);
+        return false;
+      }
+      
+      if (valor.length < 10) {
+        mostrarError(campoMensaje, 'El mensaje debe tener al menos 10 caracteres');
+        return false;
+      }
+      
+      ocultarError(campoMensaje);
+      mostrarExito(campoMensaje);
+      return true;
+    }
+
+    /**
+     * Valida todo el formulario
+     * @returns boolean - true si todos los campos son válidos
+     */
+    function validarFormulario(): boolean {
+      const nombreValido = validarNombre();
+      const emailValido = validarEmail();
+      const telefonoValido = validarTelefono();
+      const asuntoValido = validarAsunto();
+      const mensajeValido = validarMensaje();
+      
+      return nombreValido && emailValido && telefonoValido && asuntoValido && mensajeValido;
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    
+    // Validación en tiempo real (on blur)
+    campoNombre?.addEventListener('blur', validarNombre);
+    campoEmail?.addEventListener('blur', validarEmail);
+    campoTelefono?.addEventListener('blur', validarTelefono);
+    campoAsunto?.addEventListener('blur', validarAsunto);
+    campoMensaje?.addEventListener('blur', validarMensaje);
+
+    // Limpiar error al escribir
+    document.querySelectorAll('.campo-input').forEach(campo => {
+      campo.addEventListener('input', () => {
+        const input = campo as HTMLInputElement | HTMLTextAreaElement;
+        if (input.classList.contains('border-red-500')) {
+          ocultarError(input);
+        }
+      });
+    });
+
+    // Submit del formulario
+    formulario?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Ocultar mensajes previos
+      mensajeExito?.classList.add('hidden');
+      mensajeError?.classList.add('hidden');
+      
+      // Validar formulario
+      if (!validarFormulario()) {
+        mensajeError?.classList.remove('hidden');
+        return;
+      }
+      
+      // Mostrar loading
+      botonEnviar.disabled = true;
+      botonTexto?.classList.add('hidden');
+      botonIcono?.classList.add('hidden');
+      botonLoading?.classList.remove('hidden');
+      
+      // Simular envío (en producción aquí iría la llamada a la API)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Mostrar éxito
+      mensajeExito?.classList.remove('hidden');
+      formulario.reset();
+      
+      // Restaurar botón
+      botonEnviar.disabled = false;
+      botonTexto?.classList.remove('hidden');
+      botonIcono?.classList.remove('hidden');
+      botonLoading?.classList.add('hidden');
+      
+      // Limpiar estilos de campos
+      document.querySelectorAll('.campo-input').forEach(campo => {
+        campo.classList.remove('border-green-500', 'border-red-500');
+        campo.classList.add('border-borde');
+      });
+      
+      // Scroll al mensaje de éxito
+      mensajeExito?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  </script>
+</Layout>
