@@ -1,0 +1,133 @@
+---
+// Ruleta de Descuentos - Gamificación
+---
+
+<button
+  id="boton-ruleta"
+  class="fixed bottom-24 md:bottom-8 right-4 z-50 w-14 h-14 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-lg shadow-purple-500/30 hover:scale-110 transition-transform flex items-center justify-center group cursor-pointer"
+  style="animation: bounce-slow 2s ease-in-out infinite;"
+>
+  <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+  <span class="absolute -top-1 -right-1 bg-yellow-400 text-black text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">%</span>
+</button>
+
+<div id="modal-ruleta" class="fixed inset-0 z-[100] hidden">
+  <div id="backdrop-ruleta" class="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"></div>
+  <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+    <div class="bg-panel border border-borde rounded-3xl p-6 max-w-sm w-full relative pointer-events-auto" style="animation: scale-in 0.3s ease-out;">
+      <button id="cerrar-ruleta" class="absolute top-4 right-4 text-gris hover:text-blanco transition cursor-pointer">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      <div class="text-center mb-4">
+        <h2 class="text-2xl font-bold">🎰 ¡Gira y Gana!</h2>
+        <p class="text-gris text-sm">Consigue un descuento exclusivo</p>
+      </div>
+      <div class="relative w-52 h-52 mx-auto mb-4">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
+          <div class="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent border-t-yellow-400"></div>
+        </div>
+        <svg id="ruleta-svg" class="w-full h-full" style="transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);" viewBox="0 0 200 200">
+          <g transform="translate(100,100)">
+            <path d="M0,0 L0,-90 A90,90 0 0,1 77.94,-45 Z" fill="#8b5cf6"/>
+            <path d="M0,0 L77.94,-45 A90,90 0 0,1 77.94,45 Z" fill="#ec4899"/>
+            <path d="M0,0 L77.94,45 A90,90 0 0,1 0,90 Z" fill="#14b8a6"/>
+            <path d="M0,0 L0,90 A90,90 0 0,1 -77.94,45 Z" fill="#f97316"/>
+            <path d="M0,0 L-77.94,45 A90,90 0 0,1 -77.94,-45 Z" fill="#eab308"/>
+            <path d="M0,0 L-77.94,-45 A90,90 0 0,1 0,-90 Z" fill="#3b82f6"/>
+            <text transform="rotate(30) translate(0,-60)" text-anchor="middle" fill="white" font-size="16" font-weight="bold">5%</text>
+            <text transform="rotate(90) translate(0,-60)" text-anchor="middle" fill="white" font-size="16" font-weight="bold">10%</text>
+            <text transform="rotate(150) translate(0,-60)" text-anchor="middle" fill="white" font-size="16" font-weight="bold">15%</text>
+            <text transform="rotate(210) translate(0,-60)" text-anchor="middle" fill="white" font-size="16" font-weight="bold">5%</text>
+            <text transform="rotate(270) translate(0,-60)" text-anchor="middle" fill="white" font-size="14" font-weight="bold">20%</text>
+            <text transform="rotate(330) translate(0,-60)" text-anchor="middle" fill="white" font-size="16" font-weight="bold">10%</text>
+          </g>
+          <circle cx="100" cy="100" r="18" fill="#1a1a1c" stroke="#3a3a3e" stroke-width="2"/>
+        </svg>
+      </div>
+      <button id="btn-girar" class="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:opacity-90 transition cursor-pointer">¡Girar Ruleta!</button>
+      <div id="resultado-ruleta" class="hidden mt-4 text-center">
+        <div class="bg-acento/10 border border-acento/30 rounded-xl p-4">
+          <p class="text-lg">🎉 ¡Felicidades!</p>
+          <p class="text-3xl font-bold text-acento mt-1" id="descuento-ganado">-15%</p>
+          <p class="text-xs text-gris mt-2">Descuento aplicado a tu carrito</p>
+        </div>
+      </div>
+      <div id="descuento-existente" class="hidden text-center mt-4">
+        <div class="bg-acento/10 border border-acento/30 rounded-xl p-4">
+          <p class="text-lg mb-1">✨ Ya tienes descuento</p>
+          <p class="text-3xl font-bold text-acento" id="descuento-actual">-15%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const botonRuleta = document.getElementById('boton-ruleta');
+  const modalRuleta = document.getElementById('modal-ruleta');
+  const backdropRuleta = document.getElementById('backdrop-ruleta');
+  const cerrarRuleta = document.getElementById('cerrar-ruleta');
+  const ruletaSvg = document.getElementById('ruleta-svg');
+  const btnGirar = document.getElementById('btn-girar') as HTMLButtonElement;
+  const resultadoRuleta = document.getElementById('resultado-ruleta');
+  const descuentoGanado = document.getElementById('descuento-ganado');
+  const descuentoExistente = document.getElementById('descuento-existente');
+  const descuentoActual = document.getElementById('descuento-actual');
+
+  const segmentos = [{d:5,a:30},{d:10,a:90},{d:15,a:150},{d:5,a:210},{d:20,a:270},{d:10,a:330}];
+  const probs = [{d:5,p:35},{d:10,p:30},{d:15,p:20},{d:20,p:15}];
+  let girando = false;
+
+  function pick(): number {
+    let r = Math.random() * 100;
+    for (const p of probs) { r -= p.p; if (r <= 0) return p.d; }
+    return 5;
+  }
+
+  function abrirModal() {
+    modalRuleta?.classList.remove('hidden');
+    const g = localStorage.getItem('descuento-ruleta');
+    if (g) {
+      btnGirar?.classList.add('hidden');
+      descuentoExistente?.classList.remove('hidden');
+      if (descuentoActual) descuentoActual.textContent = `-${g}%`;
+    } else {
+      btnGirar?.classList.remove('hidden');
+      resultadoRuleta?.classList.add('hidden');
+      descuentoExistente?.classList.add('hidden');
+    }
+  }
+
+  function cerrarModal() { modalRuleta?.classList.add('hidden'); }
+
+  function girar() {
+    if (girando) return;
+    girando = true;
+    const d = pick();
+    const seg = segmentos.filter(s => s.d === d);
+    const ang = seg[Math.floor(Math.random() * seg.length)].a;
+    const rot = 1800 + (360 - ang + 30);
+    if (ruletaSvg) ruletaSvg.style.transform = `rotate(${rot}deg)`;
+    if (btnGirar) { btnGirar.textContent = 'Girando...'; btnGirar.disabled = true; }
+    setTimeout(() => {
+      localStorage.setItem('descuento-ruleta', d.toString());
+      if (descuentoGanado) descuentoGanado.textContent = `-${d}%`;
+      btnGirar?.classList.add('hidden');
+      resultadoRuleta?.classList.remove('hidden');
+      if ((window as any).mostrarToast) (window as any).mostrarToast(`🎉 ¡${d}% de descuento!`);
+      girando = false;
+    }, 4000);
+  }
+
+  botonRuleta?.addEventListener('click', abrirModal);
+  cerrarRuleta?.addEventListener('click', cerrarModal);
+  backdropRuleta?.addEventListener('click', cerrarModal);
+  btnGirar?.addEventListener('click', girar);
+</script>
+
+<style>
+  @keyframes bounce-slow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes scale-in { 0%{transform:scale(0.9);opacity:0} 100%{transform:scale(1);opacity:1} }
+</style>

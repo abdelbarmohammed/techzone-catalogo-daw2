@@ -42,18 +42,14 @@ try {
 const simboloMoneda = textos?.simboloMoneda || '€';
 ---
 
-<Layout titulo={carrito?.metaTitulo} descripcion={carrito?.metaDescripcion}>
+<Layout titulo={carrito?.metaTitulo || 'Carrito'} descripcion={carrito?.metaDescripcion || ''}>
   
-  <!-- Background Gradient -->
   <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
     <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-acento/5 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-1/3 left-0 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-3xl"></div>
   </div>
 
   {error || !carrito ? (
-    <div class="text-center py-20 text-error">
-      <p>Error al cargar.</p>
-    </div>
+    <div class="text-center py-20 text-error"><p>Error al cargar.</p></div>
   ) : (
     <div class="py-8 animate-fade-in">
       <h1 class="text-3xl md:text-4xl font-bold mb-8">{carrito.titulo}</h1>
@@ -68,9 +64,6 @@ const simboloMoneda = textos?.simboloMoneda || '€';
         <p class="text-gris text-lg mb-6">{carrito.vacio}</p>
         <a href="/productos" class="inline-flex items-center gap-2 px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
           {carrito.seguirComprando}
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
         </a>
       </div>
       
@@ -85,9 +78,6 @@ const simboloMoneda = textos?.simboloMoneda || '€';
         <p class="text-gris text-lg mb-6 max-w-md mx-auto">{carrito.pedidoExitoMensaje}</p>
         <a href="/" class="inline-flex items-center gap-2 px-6 py-3 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition">
           {carrito.volverInicio}
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
         </a>
       </div>
       
@@ -95,25 +85,206 @@ const simboloMoneda = textos?.simboloMoneda || '€';
       <div id="carrito-contenido" class="hidden">
         <div class="grid lg:grid-cols-3 gap-8">
           
-          <!-- Lista de Items -->
-          <div class="lg:col-span-2 space-y-4">
+          <!-- Lista de Items + Formulario -->
+          <div class="lg:col-span-2 space-y-6">
             <div id="carrito-items" class="space-y-4"></div>
+            
+            <!-- Formulario de Pago -->
+            <div class="bg-panel border border-borde rounded-2xl p-6">
+              <h2 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                <svg class="w-6 h-6 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Datos de Pago
+              </h2>
+              
+              <form id="form-pago" class="space-y-4" novalidate>
+                <!-- Nombre Completo -->
+                <div>
+                  <label for="nombre" class="block text-sm font-medium text-blanco mb-2">
+                    Nombre Completo <span class="text-acento">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="nombre"
+                    name="nombre"
+                    required
+                    class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                    placeholder="Juan García López"
+                  />
+                  <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                </div>
+                
+                <!-- Email -->
+                <div>
+                  <label for="email" class="block text-sm font-medium text-blanco mb-2">
+                    Email <span class="text-acento">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                    placeholder="tu@email.com"
+                  />
+                  <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                </div>
+                
+                <!-- Teléfono -->
+                <div>
+                  <label for="telefono" class="block text-sm font-medium text-blanco mb-2">
+                    Teléfono <span class="text-acento">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="telefono"
+                    name="telefono"
+                    required
+                    class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                    placeholder="+34 612 345 678"
+                  />
+                  <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                </div>
+                
+                <!-- Dirección -->
+                <div>
+                  <label for="direccion" class="block text-sm font-medium text-blanco mb-2">
+                    Dirección de Envío <span class="text-acento">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="direccion"
+                    name="direccion"
+                    required
+                    class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                    placeholder="Calle Mayor 123, 2ºB"
+                  />
+                  <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                </div>
+                
+                <!-- Ciudad y CP -->
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="ciudad" class="block text-sm font-medium text-blanco mb-2">
+                      Ciudad <span class="text-acento">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="ciudad"
+                      name="ciudad"
+                      required
+                      class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                      placeholder="Málaga"
+                    />
+                    <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                  </div>
+                  <div>
+                    <label for="cp" class="block text-sm font-medium text-blanco mb-2">
+                      Código Postal <span class="text-acento">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="cp"
+                      name="cp"
+                      required
+                      class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                      placeholder="29001"
+                    />
+                    <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                  </div>
+                </div>
+                
+                <hr class="border-borde my-6" />
+                
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <svg class="w-5 h-5 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Tarjeta de Crédito
+                </h3>
+                
+                <!-- Número de Tarjeta -->
+                <div>
+                  <label for="tarjeta" class="block text-sm font-medium text-blanco mb-2">
+                    Número de Tarjeta <span class="text-acento">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="tarjeta"
+                    name="tarjeta"
+                    required
+                    maxlength="19"
+                    class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                    placeholder="1234 5678 9012 3456"
+                  />
+                  <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                </div>
+                
+                <!-- Fecha y CVV -->
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="expiry" class="block text-sm font-medium text-blanco mb-2">
+                      Fecha Expiración <span class="text-acento">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="expiry"
+                      name="expiry"
+                      required
+                      maxlength="5"
+                      class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                      placeholder="MM/AA"
+                    />
+                    <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                  </div>
+                  <div>
+                    <label for="cvv" class="block text-sm font-medium text-blanco mb-2">
+                      CVV <span class="text-acento">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="cvv"
+                      name="cvv"
+                      required
+                      maxlength="4"
+                      class="campo-input w-full px-4 py-3 bg-fondo border border-borde rounded-xl text-blanco placeholder:text-gris focus:outline-none focus:border-acento transition"
+                      placeholder="123"
+                    />
+                    <p class="error-msg hidden text-red-400 text-xs mt-1"></p>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
           
           <!-- Resumen -->
           <div class="lg:col-span-1">
             <div class="bg-panel border border-borde rounded-2xl p-6 sticky top-24">
-              <h2 class="text-xl font-semibold mb-6">{carrito.subtotal}</h2>
+              <h2 class="text-xl font-semibold mb-6">Resumen del Pedido</h2>
               
               <div class="space-y-3 mb-6">
                 <div class="flex justify-between text-gris">
                   <span>{carrito.subtotal}</span>
                   <span id="carrito-subtotal">{simboloMoneda}0</span>
                 </div>
+                
+                <!-- Descuento de Ruleta -->
+                <div id="fila-descuento" class="hidden flex justify-between text-green-400">
+                  <span class="flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Descuento Ruleta (<span id="porcentaje-descuento">0</span>%)
+                  </span>
+                  <span id="cantidad-descuento">-{simboloMoneda}0</span>
+                </div>
+                
                 <div class="flex justify-between text-gris">
                   <span>Envío</span>
                   <span class="text-green-400">Gratis</span>
                 </div>
+                
                 <div class="border-t border-borde pt-4 flex justify-between font-semibold text-xl">
                   <span>{carrito.total}</span>
                   <span id="carrito-total" class="text-acento">{simboloMoneda}0</span>
@@ -122,7 +293,9 @@ const simboloMoneda = textos?.simboloMoneda || '€';
               
               <button 
                 id="btn-finalizar"
-                class="btn-primary w-full py-4 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition mb-3 flex items-center justify-center gap-2"
+                type="submit"
+                form="form-pago"
+                class="cursor-pointer w-full py-4 bg-acento text-fondo font-semibold rounded-xl hover:opacity-90 transition mb-3 flex items-center justify-center gap-2"
               >
                 <span id="btn-finalizar-texto">{carrito.irPagar}</span>
                 <svg id="btn-finalizar-icono" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,12 +307,19 @@ const simboloMoneda = textos?.simboloMoneda || '€';
                 </svg>
               </button>
               
-              <a 
-                href="/productos" 
-                class="block w-full py-3 text-center border border-borde text-blanco rounded-xl hover:bg-fondo transition"
-              >
+              <a href="/productos" class="block w-full py-3 text-center border border-borde text-blanco rounded-xl hover:bg-fondo transition">
                 {carrito.seguirComprando}
               </a>
+              
+              <!-- Security badges -->
+              <div class="mt-6 pt-4 border-t border-borde">
+                <div class="flex items-center justify-center gap-2 text-xs text-gris">
+                  <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Pago 100% Seguro
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -147,41 +327,31 @@ const simboloMoneda = textos?.simboloMoneda || '€';
     </div>
   )}
   
-  <!-- Pass data to script -->
   <div id="datos-carrito" data-simbolo={simboloMoneda} class="hidden"></div>
 </Layout>
 
 <!-- Template para item del carrito -->
 <template id="template-item">
-  <div class="item-carrito card-hover bg-panel border border-borde rounded-2xl p-4 flex gap-4" data-id="">
-    <a href="" class="item-link w-24 h-24 bg-fondo rounded-xl overflow-hidden flex-shrink-0 block">
+  <div class="item-carrito bg-panel border border-borde rounded-2xl p-4 flex gap-4" data-id="">
+    <a href="" class="item-link w-20 h-20 bg-fondo rounded-xl overflow-hidden flex-shrink-0 block">
       <img src="" alt="" class="item-imagen w-full h-full object-contain" />
     </a>
     <div class="flex-grow min-w-0">
       <a href="" class="item-link-nombre block">
         <h3 class="font-semibold text-blanco hover:text-acento transition line-clamp-1 item-nombre"></h3>
       </a>
-      <p class="text-gris text-sm mt-1 line-clamp-1 item-descripcion"></p>
-      <p class="text-acento font-bold text-lg mt-2 item-precio"></p>
+      <p class="text-acento font-bold mt-1 item-precio"></p>
     </div>
     <div class="flex flex-col items-end justify-between flex-shrink-0">
-      <button class="btn-eliminar text-gris hover:text-red-400 transition p-2 rounded-lg hover:bg-red-500/10">
+      <button class="btn-eliminar text-gris hover:text-red-400 transition p-1 cursor-pointer">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
       <div class="flex items-center gap-2">
-        <button class="btn-menos w-9 h-9 rounded-xl border border-borde hover:bg-acento hover:text-fondo hover:border-acento transition flex items-center justify-center">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-          </svg>
-        </button>
-        <span class="item-cantidad w-8 text-center font-semibold"></span>
-        <button class="btn-mas w-9 h-9 rounded-xl border border-borde hover:bg-acento hover:text-fondo hover:border-acento transition flex items-center justify-center">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
+        <button class="btn-menos w-8 h-8 rounded-lg border border-borde hover:bg-acento hover:text-fondo hover:border-acento transition flex items-center justify-center cursor-pointer">−</button>
+        <span class="item-cantidad w-6 text-center font-semibold"></span>
+        <button class="btn-mas w-8 h-8 rounded-lg border border-borde hover:bg-acento hover:text-fondo hover:border-acento transition flex items-center justify-center cursor-pointer">+</button>
       </div>
     </div>
   </div>
@@ -190,24 +360,174 @@ const simboloMoneda = textos?.simboloMoneda || '€';
 <script>
   import { obtenerCarrito, eliminarDelCarrito, actualizarCantidad, obtenerPrecioTotal, vaciarCarrito } from '../lib/carrito';
   
-  // Obtener símbolo de moneda desde el DOM (viene de Strapi)
-  const datosCarrito = document.getElementById('datos-carrito') as HTMLElement;
-  const simboloMoneda = datosCarrito?.dataset.simbolo || '€';
+  // ============================================
+  // EXPRESIONES REGULARES PARA VALIDACIÓN
+  // ============================================
+  const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{3,50}$/;
+  const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const regexTelefono = /^(\+34\s?)?[6789]\d{2}[\s.-]?\d{3}[\s.-]?\d{3}$/;
+  const regexDireccion = /^.{5,100}$/;
+  const regexCiudad = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/;
+  const regexCP = /^\d{5}$/;
+  const regexTarjeta = /^\d{4}\s?\d{4}\s?\d{4}\s?\d{4}$/;
+  const regexExpiry = /^(0[1-9]|1[0-2])\/\d{2}$/;
+  const regexCVV = /^\d{3,4}$/;
   
-  // Elementos del DOM
+  const simboloMoneda = (document.getElementById('datos-carrito') as HTMLElement)?.dataset.simbolo || '€';
+  
+  // Elementos
   const carritoVacio = document.getElementById('carrito-vacio');
   const carritoContenido = document.getElementById('carrito-contenido');
   const pedidoExito = document.getElementById('pedido-exito');
   const carritoItems = document.getElementById('carrito-items');
   const carritoSubtotal = document.getElementById('carrito-subtotal');
   const carritoTotal = document.getElementById('carrito-total');
+  const filaDescuento = document.getElementById('fila-descuento');
+  const porcentajeDescuento = document.getElementById('porcentaje-descuento');
+  const cantidadDescuento = document.getElementById('cantidad-descuento');
   const template = document.getElementById('template-item') as HTMLTemplateElement;
   const btnFinalizar = document.getElementById('btn-finalizar') as HTMLButtonElement;
   const btnFinalizarTexto = document.getElementById('btn-finalizar-texto');
   const btnFinalizarIcono = document.getElementById('btn-finalizar-icono');
   const btnFinalizarLoading = document.getElementById('btn-finalizar-loading');
+  const formPago = document.getElementById('form-pago') as HTMLFormElement;
   
-  // Renderizar carrito
+  // ============================================
+  // PERSISTENCIA DE FORMULARIO EN LOCALSTORAGE
+  // ============================================
+  const FORM_STORAGE_KEY = 'checkout-form-data';
+  
+  function guardarFormulario(): void {
+    const data: Record<string, string> = {};
+    formPago?.querySelectorAll('input').forEach(input => {
+      // No guardar CVV por seguridad
+      if (input.name && input.name !== 'cvv') {
+        data[input.name] = input.value;
+      }
+    });
+    localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+  }
+  
+  function cargarFormulario(): void {
+    const saved = localStorage.getItem(FORM_STORAGE_KEY);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        Object.entries(data).forEach(([name, value]) => {
+          const input = formPago?.querySelector(`[name="${name}"]`) as HTMLInputElement;
+          if (input) input.value = value as string;
+        });
+      } catch (e) {}
+    }
+  }
+  
+  // Guardar en cada cambio
+  formPago?.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', guardarFormulario);
+  });
+  
+  // Cargar al inicio
+  cargarFormulario();
+  
+  // ============================================
+  // VALIDACIÓN DE CAMPOS
+  // ============================================
+  function mostrarError(input: HTMLInputElement, mensaje: string): void {
+    input.classList.add('border-red-500');
+    input.classList.remove('border-borde', 'border-green-500');
+    const errorEl = input.parentElement?.querySelector('.error-msg') as HTMLElement;
+    if (errorEl) {
+      errorEl.textContent = mensaje;
+      errorEl.classList.remove('hidden');
+    }
+  }
+  
+  function mostrarExito(input: HTMLInputElement): void {
+    input.classList.remove('border-red-500', 'border-borde');
+    input.classList.add('border-green-500');
+    const errorEl = input.parentElement?.querySelector('.error-msg') as HTMLElement;
+    if (errorEl) errorEl.classList.add('hidden');
+  }
+  
+  function validarCampo(input: HTMLInputElement, regex: RegExp, mensajeError: string): boolean {
+    const valor = input.value.trim();
+    if (!valor) {
+      mostrarError(input, 'Este campo es requerido');
+      return false;
+    }
+    if (!regex.test(valor)) {
+      mostrarError(input, mensajeError);
+      return false;
+    }
+    mostrarExito(input);
+    return true;
+  }
+  
+  // Validación en tiempo real (blur)
+  const campos = [
+    { id: 'nombre', regex: regexNombre, error: 'Solo letras y espacios (3-50 caracteres)' },
+    { id: 'email', regex: regexEmail, error: 'Email no válido' },
+    { id: 'telefono', regex: regexTelefono, error: 'Teléfono español no válido' },
+    { id: 'direccion', regex: regexDireccion, error: 'Dirección muy corta' },
+    { id: 'ciudad', regex: regexCiudad, error: 'Ciudad no válida' },
+    { id: 'cp', regex: regexCP, error: 'Código postal: 5 dígitos' },
+    { id: 'tarjeta', regex: regexTarjeta, error: 'Formato: 1234 5678 9012 3456' },
+    { id: 'expiry', regex: regexExpiry, error: 'Formato: MM/AA' },
+    { id: 'cvv', regex: regexCVV, error: '3-4 dígitos' },
+  ];
+  
+  campos.forEach(({ id, regex, error }) => {
+    const input = document.getElementById(id) as HTMLInputElement;
+    input?.addEventListener('blur', () => validarCampo(input, regex, error));
+    input?.addEventListener('input', () => {
+      if (input.classList.contains('border-red-500')) {
+        input.classList.remove('border-red-500');
+        input.classList.add('border-borde');
+        input.parentElement?.querySelector('.error-msg')?.classList.add('hidden');
+      }
+    });
+  });
+  
+  // Formateo automático de tarjeta
+  document.getElementById('tarjeta')?.addEventListener('input', (e) => {
+    const input = e.target as HTMLInputElement;
+    let value = input.value.replace(/\s/g, '').replace(/\D/g, '');
+    value = value.match(/.{1,4}/g)?.join(' ') || value;
+    input.value = value.substring(0, 19);
+  });
+  
+  // Formateo automático de fecha
+  document.getElementById('expiry')?.addEventListener('input', (e) => {
+    const input = e.target as HTMLInputElement;
+    let value = input.value.replace(/\D/g, '');
+    if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
+    input.value = value.substring(0, 5);
+  });
+  
+  // ============================================
+  // CALCULAR TOTALES CON DESCUENTO
+  // ============================================
+  function calcularTotales(): void {
+    const subtotal = obtenerPrecioTotal();
+    const descuento = parseInt(localStorage.getItem('descuento-ruleta') || '0');
+    const cantidadDesc = Math.round(subtotal * (descuento / 100));
+    const total = subtotal - cantidadDesc;
+    
+    if (carritoSubtotal) carritoSubtotal.textContent = `${simboloMoneda}${subtotal.toLocaleString()}`;
+    
+    if (descuento > 0 && filaDescuento) {
+      filaDescuento.classList.remove('hidden');
+      filaDescuento.classList.add('flex');
+      if (porcentajeDescuento) porcentajeDescuento.textContent = descuento.toString();
+      if (cantidadDescuento) cantidadDescuento.textContent = `-${simboloMoneda}${cantidadDesc.toLocaleString()}`;
+    }
+    
+    if (carritoTotal) carritoTotal.textContent = `${simboloMoneda}${total.toLocaleString()}`;
+  }
+  
+  // ============================================
+  // RENDERIZAR CARRITO
+  // ============================================
   function renderizarCarrito(): void {
     const items = obtenerCarrito();
     
@@ -222,100 +542,90 @@ const simboloMoneda = textos?.simboloMoneda || '€';
     carritoContenido?.classList.remove('hidden');
     pedidoExito?.classList.add('hidden');
     
-    // Limpiar items actuales
     if (carritoItems) {
       carritoItems.innerHTML = '';
-      
-      // Renderizar cada item
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         const clone = template.content.cloneNode(true) as DocumentFragment;
         const div = clone.querySelector('.item-carrito') as HTMLElement;
-        
-        // Añadir animación escalonada
-        div.style.animationDelay = `${index * 0.05}s`;
-        div.classList.add('animate-slide-up');
-        
         div.dataset.id = item.id.toString();
         
-        const imagen = clone.querySelector('.item-imagen') as HTMLImageElement;
-        imagen.src = item.imagen;
-        imagen.alt = item.nombre;
-        
-        // Links al producto
-        const links = clone.querySelectorAll('.item-link, .item-link-nombre');
-        links.forEach(link => {
-          (link as HTMLAnchorElement).href = `/productos/${item.slug}`;
-        });
-        
+        (clone.querySelector('.item-imagen') as HTMLImageElement).src = item.imagen;
+        (clone.querySelectorAll('.item-link, .item-link-nombre') as NodeListOf<HTMLAnchorElement>).forEach(a => a.href = `/productos/${item.slug}`);
         (clone.querySelector('.item-nombre') as HTMLElement).textContent = item.nombre;
         (clone.querySelector('.item-precio') as HTMLElement).textContent = `${simboloMoneda}${(item.precio * item.cantidad).toLocaleString()}`;
         (clone.querySelector('.item-cantidad') as HTMLElement).textContent = item.cantidad.toString();
         
-        // Event listeners
         clone.querySelector('.btn-eliminar')?.addEventListener('click', () => {
           eliminarDelCarrito(item.id);
           renderizarCarrito();
-          actualizarContadorCarrito();
+          window.dispatchEvent(new CustomEvent('carrito-actualizado'));
         });
         
         clone.querySelector('.btn-menos')?.addEventListener('click', () => {
           actualizarCantidad(item.id, item.cantidad - 1);
           renderizarCarrito();
-          actualizarContadorCarrito();
+          window.dispatchEvent(new CustomEvent('carrito-actualizado'));
         });
         
         clone.querySelector('.btn-mas')?.addEventListener('click', () => {
           actualizarCantidad(item.id, item.cantidad + 1);
           renderizarCarrito();
-          actualizarContadorCarrito();
+          window.dispatchEvent(new CustomEvent('carrito-actualizado'));
         });
         
         carritoItems.appendChild(clone);
       });
     }
     
-    // Actualizar totales
-    const total = obtenerPrecioTotal();
-    if (carritoSubtotal) carritoSubtotal.textContent = `${simboloMoneda}${total.toLocaleString()}`;
-    if (carritoTotal) carritoTotal.textContent = `${simboloMoneda}${total.toLocaleString()}`;
+    calcularTotales();
   }
   
-  // Actualizar contador en el header
-  function actualizarContadorCarrito(): void {
-    window.dispatchEvent(new CustomEvent('carrito-actualizado'));
-  }
-  
-  // Finalizar compra
-  btnFinalizar?.addEventListener('click', async () => {
-    // Mostrar loading
+  // ============================================
+  // FINALIZAR COMPRA
+  // ============================================
+  formPago?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Validar todos los campos
+    let valido = true;
+    campos.forEach(({ id, regex, error }) => {
+      const input = document.getElementById(id) as HTMLInputElement;
+      if (!validarCampo(input, regex, error)) valido = false;
+    });
+    
+    if (!valido) {
+      if ((window as any).mostrarToast) {
+        (window as any).mostrarToast('⚠️ Corrige los errores del formulario');
+      }
+      return;
+    }
+    
+    // Loading
     btnFinalizar.disabled = true;
     btnFinalizarTexto?.classList.add('hidden');
     btnFinalizarIcono?.classList.add('hidden');
     btnFinalizarLoading?.classList.remove('hidden');
     
-    // Simular procesamiento
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(r => setTimeout(r, 2000));
     
-    // Vaciar carrito
+    // Limpiar todo
     vaciarCarrito();
-    actualizarContadorCarrito();
+    localStorage.removeItem('descuento-ruleta');
+    localStorage.removeItem(FORM_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent('carrito-actualizado'));
     
     // Mostrar éxito
     carritoContenido?.classList.add('hidden');
     pedidoExito?.classList.remove('hidden');
     
-    // Restaurar botón
     btnFinalizar.disabled = false;
     btnFinalizarTexto?.classList.remove('hidden');
     btnFinalizarIcono?.classList.remove('hidden');
     btnFinalizarLoading?.classList.add('hidden');
   });
   
-  // Escuchar cambios en el carrito
-  window.addEventListener('carrito-actualizado', () => {
-    renderizarCarrito();
-  });
-  
-  // Renderizar al cargar
+  // Init
   renderizarCarrito();
+  window.addEventListener('carrito-actualizado', renderizarCarrito);
+  window.addEventListener('descuento-aplicado', calcularTotales);
 </script>

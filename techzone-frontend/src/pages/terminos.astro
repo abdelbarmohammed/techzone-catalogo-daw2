@@ -1,0 +1,80 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { obtenerDeStrapi } from "../lib/strapi";
+
+interface ConfiguracionSitio {
+  nombreSitio: string;
+  emailContacto: string;
+}
+
+let config: ConfiguracionSitio | null = null;
+try {
+  const res = await obtenerDeStrapi<ConfiguracionSitio>('configuracion-sitio');
+  config = res.data;
+} catch (e) {}
+
+const nombreSitio = config?.nombreSitio || 'GaleríaTech';
+const email = config?.emailContacto || 'info@galeriatech.es';
+---
+
+<Layout titulo={`Términos y Condiciones | ${nombreSitio}`} descripcion="Términos y condiciones de uso del sitio web.">
+  <div class="max-w-3xl mx-auto py-8 animate-fade-in">
+    <h1 class="text-3xl font-bold mb-8">Términos y Condiciones</h1>
+    
+    <div class="prose prose-invert space-y-6 text-gris">
+      <p class="text-blanco">Última actualización: Febrero 2026</p>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">1. Información General</h2>
+        <p>El presente documento establece las condiciones de uso del sitio web {nombreSitio}. Al acceder y utilizar este sitio, aceptas estos términos.</p>
+      </section>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">2. Uso del Sitio</h2>
+        <ul class="list-disc list-inside space-y-1">
+          <li>El contenido es solo para uso personal y no comercial</li>
+          <li>Está prohibido copiar o redistribuir el contenido sin autorización</li>
+          <li>Debes proporcionar información veraz en los formularios</li>
+        </ul>
+      </section>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">3. Productos y Precios</h2>
+        <p>Los precios mostrados incluyen IVA. Nos reservamos el derecho de modificar precios sin previo aviso. Las imágenes son orientativas.</p>
+      </section>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">4. Proceso de Compra</h2>
+        <ul class="list-disc list-inside space-y-1">
+          <li>Los pedidos están sujetos a disponibilidad</li>
+          <li>Recibirás confirmación por email</li>
+          <li>El envío es gratuito en península</li>
+        </ul>
+      </section>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">5. Devoluciones</h2>
+        <p>Dispones de 14 días naturales para devolver productos sin usar en su embalaje original. Contacta con <a href={`mailto:${email}`} class="text-acento hover:underline">{email}</a> para gestionar devoluciones.</p>
+      </section>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">6. Propiedad Intelectual</h2>
+        <p>Todo el contenido (textos, imágenes, logos) es propiedad de {nombreSitio} o sus proveedores y está protegido por leyes de propiedad intelectual.</p>
+      </section>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">7. Limitación de Responsabilidad</h2>
+        <p>No nos hacemos responsables de errores tipográficos, interrupciones del servicio o daños derivados del uso del sitio.</p>
+      </section>
+      
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold text-blanco">8. Contacto</h2>
+        <p>Para cualquier consulta: <a href={`mailto:${email}`} class="text-acento hover:underline">{email}</a></p>
+      </section>
+    </div>
+    
+    <div class="mt-12 pt-6 border-t border-borde">
+      <a href="/" class="text-acento hover:underline">← Volver al inicio</a>
+    </div>
+  </div>
+</Layout>
